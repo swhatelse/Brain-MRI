@@ -1,0 +1,39 @@
+#+TAGS: noexport(n) software(s) Alexis(a) Florence(f)
+
+#+Title: Journal
+#+AUTHOR:      Steven QUINITO MASNADA
+#+BABEL: :tangle yes :noweb yes
+
+* TODO
+  - [ ] Create R package from Stephane Despreaux source code
+  - [ ] Implement Markov field approach
+  - [ ] Discuss best practices with Jaime
+  - [ ] Try to install SpaceM^3 to see if it is still compatible
+  - [ ] Find literature about Markov fields computation parallelization
+* September
+** 2017-09-05
+*** Tumor detection process                                        :software:
+    1. ROI localization
+      a. Build the reference model of healthy subjects:
+        - Find data cluster according to their distribution (multiple
+        scale t-distributions) using the EM algorithm 
+        - Aggregate these distributions into a mixture model
+      b. Distriminate abnormal voxels:
+        - By using reference model to compute likelyhood score for each
+          voxels 
+        - Determine a threshold to distinguish healthy from pathological
+	  - Compute the different anomaly level thresholds using slope
+            heuristic
+	  - Compute threshold of only 2 components (healthy /
+            pathological) and keep the closest to one of the threshold
+            computed previously.
+    2. Build a anomaly model:
+       - same as in 1.a on abnormal voxels
+    3. Fingerprint model \to Supervised learning to characterize the
+       different tumor types:
+       - Compute the proportion of each anomaly clusters in the tumors
+       - Take into account their sizes.
+    4. Remove healthy isolated voxels considered as abnormal.
+       - Refined segmentation \to erosion-dilatation kernel to remove
+         isolated voxels.
+       - Refined fingerprint model \to redo 3. using refined segmentation
