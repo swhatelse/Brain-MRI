@@ -4,12 +4,17 @@
 #+AUTHOR:      Steven QUINITO MASNADA
 #+BABEL: :tangle yes :noweb yes
 
-* TODO
+* TODO [0/5]
   - [ ] Create R package from Stephane Despreaux source code
   - [ ] Implement Markov field approach
   - [ ] Discuss best practices with Jaime
   - [ ] Try to install SpaceM^3 to see if it is still compatible
-  - [ ] Find literature about Markov fields computation parallelization
+  - [ ] Parallelization
+    - [ ] Find literature about Markov fields computation
+      parallelization
+    - [ ] Take a look at Stable set \to Markov fields decomposition
+    - [ ] GPUs
+    - [ ] Cluster
 * September
 ** 2017-09-05
 *** Tumor detection process                                        :software:
