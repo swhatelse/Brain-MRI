@@ -1,0 +1,68 @@
+#+TAGS: noexport(n)
+#+LANGUAGE: en
+
+#+Title: Notes
+#+AUTHOR:      Steven QUINITO MASNADA
+
+
+#+LATEX_HEADER: \usepackage[american]{babel}
+#+LATEX_HEADER: \usepackage{amsmath,amssymb,amsthm,amsfonts}
+
+* Mathematical notions
+** Kullback-Leibler divergence
+   Divergence measure between two distributions.
+** Mixture models
+  Example:
+  #+begin_src R :results output graphics :file (org-babel-temp-file "figure" ".png") :exports both :width 600 :height 400 :session
+    f1 <- function(x) dnorm(x, mean = 1, sd = 1) * 0.4
+    f2 <- function(x) dnorm(x, mean = 10, sd = 3) * 0.4
+    f3 <- function(x) dnorm(x, mean = 4, sd = 0.5) * 0.2
+
+    plot(function(x) f1(x) + f2(x) + f3(x), -10, 20)
+    curve(f1, add=TRUE, col = "red", lty = 2 )
+    curve(f2, add=TRUE, col = "blue", lty=2)
+    curve(f3, add=TRUE, col = "green", lty = 2 )
+  #+end_src
+
+  #+RESULTS:
+  [[file:/tmp/babel-4587BL1/figure4587kQd.png]]
+** Multiple Scale T-distribution
+** Bayesian
+*** Prior
+    It is the inverse conditionning of the posterior e.g. p(x^t | x^{t-1})
+    \to p(x^{t-1} | x^t). It is more generally speaking the right-hand side
+    of the posterior condition.
+
+    In bayesian the parameters are considered as random variables, so
+    the prior is the parameter distributions. 
+
+    The prior can be non-informatif \to posterior independant of the
+    prior. Or it can be informatif \to posterior dependant of the
+    prior.
+
+** Markov Random Field
+   It is used to traduce some dependencies c.f. Markov property.
+
+** Hidden Markov Random Field
+** EM algorithm
+* Emacs Setup 							   :noexport:
+  This document has local variables in its postembule, which should
+  allow Org-mode to work seamlessly without any setup. If you're
+  uncomfortable using such variables, you can safely ignore them at
+  startup. Exporting may require that you copy them in your .emacs.
+
+# Local Variables:
+# eval:    (require 'org-install)
+# eval:    (org-babel-do-load-languages 'org-babel-load-languages '( (sh . t) (R . t) (perl . t) (ditaa . t) ))
+# eval:    (setq org-confirm-babel-evaluate nil)
+# eval:    (unless (boundp 'org-latex-classes) (setq org-latex-classes nil))
+# eval:    (add-to-list 'org-latex-classes '("memoir" "\\documentclass[smallextended]{memoir} \n \[NO-DEFAULT-PACKAGES]\n \[EXTRA]\n  \\usepackage{graphicx}\n  \\usepackage{hyperref}" ("\\chapter{%s}" . "\\chapter*{%s}") ("\\section{%s}" . "\\section*{%s}") ("\\subsection{%s}" . "\\subsection*{%s}")                       ("\\subsubsection{%s}" . "\\subsubsection*{%s}")                       ("\\paragraph{%s}" . "\\paragraph*{%s}")                       ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+# eval:    (add-to-list 'org-latex-classes '("acm-proc-article-sp" "\\documentclass{acm_proc_article-sp}\n \[NO-DEFAULT-PACKAGES]\n \[EXTRA]\n"  ("\\section{%s}" . "\\section*{%s}") ("\\subsection{%s}" . "\\subsection*{%s}")                       ("\\subsubsection{%s}" . "\\subsubsection*{%s}")                       ("\\paragraph{%s}" . "\\paragraph*{%s}")                       ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+# eval:    (setq org-alphabetical-lists t)
+# eval:    (setq org-src-fontify-natively t)
+# eval:   (setq org-export-babel-evaluate nil)
+# eval:   (setq ispell-local-dictionary "english")
+# eval:   (eval (flyspell-mode t))
+# eval:    (setq org-latex-listings 'minted)
+# eval:    (setq org-latex-minted-options '(("bgcolor" "white") ("style" "tango") ("numbers" "left") ("numbersep" "5pt")))
+# End:
