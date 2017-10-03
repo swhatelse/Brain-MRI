@@ -1,4 +1,4 @@
-#+TAGS: noexport(n)
+#+TAGS: noexport(n) EM(e) HMRF(h)
 #+LANGUAGE: en
 
 #+Title: Notes
@@ -9,6 +9,9 @@
 #+LATEX_HEADER: \usepackage{amsmath,amssymb,amsthm,amsfonts}
 
 * Mathematical notions
+** Basic Probabilities
+*** Joint probabilities
+    $ p(X,Z) = p(X|Z) p(Z) = p(Z|X) p(X) $
 ** Kullback-Leibler divergence
    Divergence measure between two distributions.
 ** Mixture models
@@ -28,10 +31,21 @@
   [[file:/tmp/babel-4587BL1/figure4587kQd.png]]
 ** Multiple Scale T-distribution
 ** Bayesian
+*** Maximum Likelihood
+    Let : 
+    - X be of set of observations {x_1,...,x_n}
+    - \theta the parameter distribution
+      
+    The likelihood is given by $p(X|\theta)$. It expresses how probable is
+    the dataset X according the parameters \theta. X is already known but \theta
+    is unknown. Thus we want to find the value of \theta that gives the
+    highest probability of observing X.
 *** Prior
-    It is the inverse conditionning of the posterior e.g. p(x^t | x^{t-1})
-    \to p(x^{t-1} | x^t). It is more generally speaking the right-hand side
-    of the posterior condition.
+    It is the inverse conditioning of the posterior e.g. in the case
+    of sequential data p(x^t | x^{t-1}) \to p(x^{t-1} | x^t). It is more
+    generally speaking the right-hand side of the posterior
+    condition. In p(y,x) = p(y|x)p(x) p(x) is the prior. It is the
+    occurrence of the right-hand side of the conditional.
 
     In bayesian the parameters are considered as random variables, so
     the prior is the parameter distributions. 
@@ -43,8 +57,65 @@
 ** Markov Random Field
    It is used to traduce some dependencies c.f. Markov property.
 
-** Hidden Markov Random Field
-** EM algorithm
+** Hidden Markov Random Field                                          :HMRF:
+** EM algorithm                                                          :EM:
+   Let X be the set of observations and Z the latent variables.
+   Let \theta be the parameters of the models.
+
+   Complete log likelihood = $ ln p(X,Z|\theta) $
+   However Z is not known and we only have the incomplete log likelihood = $
+   ln p(X|\theta) $. Thus we need to estimate the complete log likelihood.
+   $ ln p(X,Z|\theta) = ln p(Z|X,\theta) p(X|\theta) $
+   We do this given the evidences and the only information we have
+   about Z which are inferred by the observations, the posterior
+   probabilities. 
+
+   $ ln p(X|\theta) = ln {\sum_{z} p(X,Z|\theta)} $
+
+*** Expectation Step
+    The E-step consists in computing an estimation of the complete log
+    likelihood:
+
+    - Compute the posterior \to The only information we have about Z is
+      based on the evidences, in other words, it is the posterior
+      distribution $ p(Z|X,\theta) $ and we estimate the likelihood based on it.
+
+    # $ Posterior \approx likelihood x prior $
+
+    - Then the posterior distribution allows us to compute the expected
+      complete likelihood:
+      $ Q(\theta,\theta^{old}) = \sum_{Z} p(Z|X,\theta^{old}^{}_{}) ln p(X,Z|\theta) $
+*** Maximization Step
+     Maximize expected log likelihood (using the posterior) $Q(\theta,\theta^{old})$ by
+     estimating means, covariances, mixing parameters, etc...
+     
+** VEM for HMRF                                                     :EM:HMRF:
+*** Energy example principle
+**** Neighbors interactions
+   #+begin_src R :results output :session :exports both
+     beta = 1
+
+     z1 = matrix(0, nrow = 3, ncol = 1)
+     z2 = matrix(0, nrow = 3, ncol = 1)
+     z3 = matrix(0, nrow = 3, ncol = 1)
+     z4 = matrix(0, nrow = 3, ncol = 1)
+     z5 = matrix(0, nrow = 3, ncol = 1)
+
+     z1[1,1] = 1
+     z2[2,1] = 1
+     z3[2,1] = 1
+     z4[3,1] = 1
+     z5[1,1] = 1
+
+     beta/2 * ()
+   #+end_src
+
+   #+RESULTS:
+   :      [,1]
+   : [1,]    0
+   : [2,]    0
+   : [3,]    0
+
 * Emacs Setup 							   :noexport:
   This document has local variables in its postembule, which should
   allow Org-mode to work seamlessly without any setup. If you're
