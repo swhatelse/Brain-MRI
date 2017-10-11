@@ -1,0 +1,315 @@
+# -*- coding: utf-8 -*-
+# -*- mode: org -*-
+#+startup: beamer
+#+STARTUP: overview
+#+STARTUP: indent
+#+TAGS: noexport(n)
+#+LANGUAGE: en
+
+#+Title:  Hidden Markov Model implementation for Mixture of Multiple Scale T-distributions
+#+AUTHOR:      Steven QUINITO MASNADA
+
+#+EPRESENT_FRAME_LEVEL: 2
+
+#+LaTeX_CLASS: beamer
+#+LaTeX_CLASS_OPTIONS: [11pt,xcolor=dvipsnames,presentation]
+#+OPTIONS:   H:3 num:t toc:nil \n:nil @:t ::t |:t ^:nil -:t f:t *:t <:t
+
+#+LATEX_HEADER: \usedescriptionitemofwidthas{bl}
+#+LATEX_HEADER: \usepackage[T1]{fontenc}
+#+LATEX_HEADER: \usepackage[utf8]{inputenc}
+#+LATEX_HEADER: \usepackage[american]{babel}
+#+LATEX_HEADER: \usepackage{amsmath,amssymb,amsthm,amsfonts}
+#+LATEX_HEADER: \usepackage{bbm}
+#+LATEX_HEADER: \usepackage{boxedminipage,xspace,multicol}
+#+LATEX_HEADER: %%%%%%%%% Begin of Beamer Layout %%%%%%%%%%%%%
+#+LATEX_HEADER: \ProcessOptionsBeamer
+#+latex_header: \mode<beamer>{\usetheme{Madrid}}
+#+LATEX_HEADER: \usecolortheme{whale}
+#+LATEX_HEADER: \usecolortheme[named=BrickRed]{structure}
+# #+LATEX_HEADER: \useinnertheme{rounded}
+#+LATEX_HEADER: \useoutertheme{infolines}
+#+LATEX_HEADER: \setbeamertemplate{footline}[frame number]
+#+LATEX_HEADER: \setbeamertemplate{headline}[default]
+#+LATEX_HEADER: \setbeamertemplate{navigation symbols}{}
+#+LATEX_HEADER: \defbeamertemplate*{headline}{info theme}{}
+#+LATEX_HEADER: \defbeamertemplate*{footline}{info theme}{\leavevmode%
+#+LATEX_HEADER:   \hbox{%
+#+LATEX_HEADER:     \begin{beamercolorbox}[wd=.5\paperwidth,ht=2.25ex,dp=1ex,center]{author in head/foot}%
+#+LATEX_HEADER:       \usebeamerfont{author in head/foot}\insertshortauthor
+#+LATEX_HEADER:     \end{beamercolorbox}%
+#+LATEX_HEADER:   \begin{beamercolorbox}[wd=.41\paperwidth,ht=2.25ex,dp=1ex,center]{title in head/foot}%
+#+LATEX_HEADER:     \usebeamerfont{title in head/foot}\insertsectionhead
+#+LATEX_HEADER:   \end{beamercolorbox}%
+#+LATEX_HEADER:   \begin{beamercolorbox}[wd=.09\paperwidth,ht=2.25ex,dp=1ex,right]{section in head/foot}%
+#+LATEX_HEADER:     \usebeamerfont{section in head/foot}\insertframenumber{}~/~\inserttotalframenumber\hspace*{2ex} 
+#+LATEX_HEADER:   \end{beamercolorbox}
+#+LATEX_HEADER:   }\vskip0pt}
+#+LATEX_HEADER: \setbeamertemplate{footline}[info theme]
+#+LATEX_HEADER: %%%%%%%%% End of Beamer Layout %%%%%%%%%%%%%
+#+LATEX_HEADER: \usepackage{verbments}
+#+LATEX_HEADER: \usepackage{xcolor}
+#+LATEX_HEADER: \usepackage{color}
+#+LATEX_HEADER: \usepackage{url} \urlstyle{sf}
+#+LATEX_HEADER: \usepackage{appendixnumberbeamer}
+#+LATEX_HEADER: \usepackage{multicol}
+
+#+LATEX_HEADER: \let\alert=\structure % to make sure the org * * works of tools
+#+BEAMER_FRAME_LEVEL: 2
+
+#+LATEX_HEADER: \AtBeginSection[]{\begin{frame}<beamer>\frametitle{Talk Outline}\tableofcontents[currentsection]\end{frame}}
+
+#+LATEX_HEADER: %\usepackage{biblatex}
+# #+LATEX_HEADER: \bibliography{../../biblio.bib}
+# #+LATEX_HEADER: \usepackage{cite}
+
+#+LATEX_HEADER: \usepackage{xparse}
+
+# Custom Commands
+#+LATEX_HEADER: \DeclareMathOperator*{\argmax}{arg\,max}
+#+LATEX_HEADER: \DeclareMathOperator*{\argmin}{arg\,min}
+
+#+LATEX_HEADER: \newcommand{\step}[1][]{^{(#1)}}
+#+LATEX_HEADER: \newcommand{\eigenv}[2]{D_{#1}\ifthenelse{\equal{#2}{}}{^{(#2)}}{}}
+#+LATEX_HEADER: \DeclareDocumentCommand{\tdelta}{ o o }{\tilde{\Delta} \IfValueT{#1}{_{#1}} \IfValueT{#2}{^{(#2)}}}
+#+LATEX_HEADER: \DeclareDocumentCommand{\tgamma}{ o o }{\tilde{\gamma} \IfValueT{#1}{_{#1}} \IfValueT{#2}{^{(#2)}}}
+#+LATEX_HEADER: \DeclareDocumentCommand{\A}{ o o }{ A \IfValueT{#1}{_{#1}} \IfValueT{#2}{^{(#2)}}}
+#+LATEX_HEADER: \DeclareDocumentCommand{\D}{ o o }{ D \IfValueT{#1}{_{#1}} \IfValueT{#2}{^{(#2)}}}
+
+#+BEGIN_LaTeX
+\newcommand{\backupbegin}{
+   \newcounter{finalframe}
+   \setcounter{finalframe}{\value{framenumber}}
+}
+\newcommand{\backupend}{
+   \setcounter{framenumber}{\value{finalframe}}
+}
+#+END_LaTeX
+
+#+BEGIN_LaTeX
+\setbeamertemplate{caption}{\raggedright\insertcaption\par}
+#+END_LaTeX
+
+
+* Glossary
+*** DONE Symbol definitions
+- Y: observed variables
+- Z: latent variables for the clusters, it is Markov field
+- W: latent variables to quantify the observation information
+- \mu: mean
+- D: eigenvectors
+- A: eigenvalues (diagonal matrix)
+- \Sigma: covariance matrix = $DAD^{T}$
+- \gamma: degree of freedom shape
+- \delta: degree of freedom intensity
+- \Theta: clusters parameters = (\mu, \Sigma, \gamma, \delta)
+- \alpha: external field parameters
+- \beta: interaction parameters
+- \psi: (\alpha,\beta) \to parameters of Z
+- S: Sites
+- \Omega(n): Neighbors of n with n \in S
+     
+* TODO Hidden Markov Models with MMST
+** TODO General
+*** MMST
+*** Distribution of Z
+#+BEGIN_LaTeX
+\begin{equation}
+p(z;\psi) = K(\psi)^{-1} exp [H(z;\psi)]
+\end{equation}
+#+END_LaTeX
+*** DONE Energy function
+Let z \in Z
+**** Energy function
+   \begin{equation}
+   H(z; \psi) = \sum_{n=1}^{N} \bigg[ \alpha_{z_n} + \frac{\beta}{2} \sum_{l\in \Omega (n) } \mathbbm{1} (z_n = z_l) \bigg]
+   \end{equation}
+
+   $\alpha_{z_{n}}$ : weight of the class to which $z_{n}$ belongs\\
+   $\mathbbm{1}(z_n = z_l)$ : Kronecker index \to return 1 if $n$ and $l$
+   have the same label. 
+
+**** Partition function
+   \begin{equation}
+   K(\psi) = \sum_{z} \exp [H(z; \psi)]
+   \end{equation}
+
+
+** TODO E Step
+*** TODO E step
+- compute the expected complete log-likelihood:
+  - Posterior probabilities:
+    - In the case of HMM, posterior probabilities cannot be computed
+      and must be approximated. Thus p(z,w|y) is approximated with the
+      distribution q(z,w). Here q is factorized as independent
+      distributions and is computed at each site.
+      # Where q is a multinomial law 
+      #+BEGIN_LaTeX
+      \begin{equation}
+      q(w,z) = \prod_{i}q_i(w_i,z_i)
+      \end{equation}
+      #+END_LaTeX
+      with i \in S, w \in W and z \in Z.
+
+      #+BEGIN_LaTeX
+      \begin{equation}
+      q_i^{t+1}(w_i,z_i) \propto exp \bigg[\mathbbm{E}_q_{i}^{t} \ln p(w_i,z_i|y, W_i^t, Z_i^t; \phi^t)\bigg]
+      \end{equation}
+      #+END_LaTeX
+*** TODO E step - Expected posterior
+- Expected posterior:
+  \begin{equation}
+  \begin{split}
+  \mathbb{E}_{q_{w_{z_{n},w_{n}}}} [\ln p(w_n,z_n|y, w_n^{(r)}, z_n^{(r)};
+  \phi^{(r)})] \\
+  \approx \sum_{k=1}^{K} \mathbb{I}_{e_{k}}(z_{n}) \sum_{m=1}^{M} [(\tilde{\gamma}_{km} - 1)
+  \ln(w_{nm}) - \tilde{\delta}_{knm} w_{nm} + \tilde{\gamma}_{km} \ln(\tilde{\delta}_{knm}) - ln \Gamma(\tilde{\gamma}_{km})] \\
+  + \sum_{k=1}^{K} \mathbb(I)_{e_{k}} [ \tilde{\alpha}_{z_{nk}} + \frac{\beta^{(r)}}{2} \sum_{l \in \Omega(n)} q_{z_{l}}^{(r)}(e_{k})]
+  \end{split}
+  \end{equation}
+*** DONE E step - variables
+N: Number of observations
+
+K: Number of mixture components (clusters)
+
+M: Gaussian dimensions
+
+$\delta_{km}$: degree of freedom intensity of the m^{th} normal in the k^{th}
+cluster.
+
+$\gamma_{km}$: degree of freedom shape of the m^{th} normal in the k^{th}
+cluster.
+
+$\tilde{\delta}_{knm} = \delta_{km} + \frac{1}{2} [ A_{k}^{(r)} D_{k}^{(r)}^{t} (y_{n} - \mu_{k}^{(r)}) (y_{n} - \mu_{k}^{(r)})^{t}
+D_{k}^{(r)} ]_{mm}$
+
+$\tilde{\gamma}_{km} = \gamma_{km} + \frac{1}{2}$
+
+\[\tilde{\alpha}_{z_{nk}} = \alpha_{zn}^{(r)} + \sum_{m=1}^{M} [ \ln(a_{km}^{(r)}) + \gamma_{km} \ln(\delta_{km}) -
+ln \Gamma(\gamma_{km}) - \tilde{\gamma}_{km} \ln(\tilde{\delta}_{knm}) + \ln \Gamma(\tilde{\gamma}_{km})]\]
+*** TODO E step - Initialization
+q_{z_{n}} can be initialized at random or with an algorithm such as k-means
+*** TODO E step - Update z
+**** Equation
+\begin{equation}
+q_{z_{n}}^{(r+1)}(e_{k}) = \frac{ exp[ \tilde{\alpha}_{z_{nk}} +
+      \frac{\beta^{(r)}}{2} \sum_{l \in \Omega(n)} q_{z_{l}}^{(r)} (e_{k})]}
+      {\sum_{j=1}^{K} exp[ \tilde{\alpha}_{z_{nj}} +
+      \frac{\beta^{(r)}}{2} \sum_{l \in \Omega(n)} q_{z_{l}}^{(r)} (e_{j})]}
+\end{equation}
+
+**** Details
+K: number of clusters\\
+N: number of observations\\
+\[\tilde{\alpha}_{z_{nk}} = \alpha_{zn}^{(r)} + \sum_{m=1}^{M} [ \ln(a_{km}^{(r)}) + \gamma_{km} \ln(\delta_{km}) -
+ln \Gamma(\gamma_{km}) - \tilde{\gamma}_{km} \ln(\tilde{\delta}_{knm}) + \ln \Gamma(\tilde{\gamma}_{km})]\]
+*** TODO E step - Update w|z
+**** Equation
+\begin{equation}
+q_{w_{n}|z_{n}}^{(r+1)}(w_{n} | z_{n} = e_{k}) = \prod_{m=1}^{M} \tilde{\delta}_{knm}^{\tilde{\gamma}_{km}} \Gamma(\tilde{\gamma}_{km})^{-1} w_{nm}^{(\tilde{\gamma}_{km}-1)} exp(- \tilde{\delta}_{knm} w_{nm})
+\end{equation}
+
+**** Details 
+:PROPERTIES:
+:END:
+M: Gaussian dimensionality
+
+$\tilde{\delta}_{knm} = \delta_{km} + \frac{1}{2} [ A_{k}^{(r)} D_{k}^{(r)}^{t} (y_{n} - \mu_{k}^{(r)}) (y_{n} - \mu_{k}^{(r)})^{t}
+D_{k}^{(r)} ]_{mm}$
+
+$\tilde{\gamma}_{km} = \gamma_{km} + \frac{1}{2}$
+*** TODO E step - Update w,z
+**** Equation
+\begin{equation}
+\prod_{k=1}^{K} q_{w_{n}|z_{n}}^{(r+1)}(w_{n} | z_{n} = e_{k}) . q_{z_{n}}^{(r+1)}(e_{k})
+\end{equation}
+**** Details
+K: number of clusters
+** TODO M Step
+*** TODO M step
+- Maximize the expected complete log-likelihood:
+  - Step 1:
+    - Update the mean
+    - Update the eigenvectors
+    - Update the eigenvalues
+  - Step 2:
+*** TODO M Step - Variables
+$\tilde{\Delta}_{nk}^{(r+1)} = \mathbbm{E}_{q_{w_{n}|z_{n} = e_{k}}}^{(r+1)} (\Delta_{n})$
+*** TODO M Step - update mean
+\begin{equation}
+\mu_{km}^{(r+1)} = \frac{\sum_{n=1}^{N} q_{z_{n}}^{(r+1)}(e_{k}) \Big[
+D_{k}^{(r)} \tilde{\Delta}_{nk}^{(r+1)} D_{k}^{(r)}^{t} y_{n }\Big]_{m}}
+              {\sum_{n=1}^{N} q_{z_{n}}^{(r+1)}(e_{k})}
+\end{equation}
+*** TODO M Step - update eigenvectors
+\begin{equation}
+D_{k}^{(r+1)} =  \argmin_{D_{k}} \sum_{n=1}^{N} tr \Big[ \D[k] \tdelta[nk][r+1] \A[k][r] \D[k]^{t} (y_{n} - \mu_{k}^{(r+1)}) (y_{n} - \mu_{k}^{(r+1)})^{t} \Big]
+\end{equation}
+*** TODO M Step - update eigenvalues
+\begin{equation}
+\A[km][r+1] = \frac{ \sum_{n=1}^{N} q_{z_{n}}^{(r+1)} (e_{k}) }{ \sum_{n=1}^{N} q_{z_{n}}^{(r+1)} (e_{k}) \tdelta[nkm][r+1] \big[ \D[k][r+1]^{t} (y_{n }- \mu_{k}^{(r+1)}) \big]_{m}^{2} }
+\end{equation}
+*** TODO M Step - update degree of freedom
+*** TODO M Step - update fields parameters
+* TODO Implementation details
+** TODO Optimization
+** TODO Performance analysis
+** Sandbox                                                         :noexport:
+   #+begin_src R :results output :session :exports both
+     library("png")
+     library("plyr")
+     y <- readPNG("images_2.png")
+     nrow_img <- nrow(y)
+     ncol_img <- ncol(y)
+   #+end_src
+
+   #+RESULTS:
+
+   Generate a noisy image:
+   #+begin_src R :results output :session :exports both
+     # noise_mat <- matrix(rbinom(ncol_img*nrow_img,1,0.2), nrow = nrow_img, ncol = ncol_img)
+     # noisy_img <- matrix(bitwXor(y,noise_mat), ncol=ncol_img)
+
+     noise_mat <- matrix(rnorm(ncol_img*nrow_img, mean = 0.5, sd=0.2), nrow = nrow_img, ncol = ncol_img)
+     noisy_img <- y + noise_mat
+     noisy_img <- (noisy_img - min(noisy_img)) / (max(noisy_img) - min(noisy_img)) # normalization
+
+     image(noisy_img)
+   #+end_src
+
+   #+RESULTS:
+
+   #+begin_src R :results output graphics :file (org-babel-temp-file "figure" ".png") :exports both :width 600 :height 400 :session
+   hist(noisy_img)
+   #+end_src
+
+   #+RESULTS:
+   [[file:/tmp/babel-6164uvh/figure61647eQ.png]]
+
+
+   #+begin_src R :results output :session :exports both
+
+   #+end_src
+
+
+* Emacs Setup 							   :noexport:
+  This document has local variables in its postembule, which should
+  allow Org-mode to work seamlessly without any setup. If you're
+  uncomfortable using such variables, you can safely ignore them at
+  startup. Exporting may require that you copy them in your .emacs.
+
+# Local Variables:
+# eval:    (require 'org-install)
+# eval:    (org-babel-do-load-languages 'org-babel-load-languages '( (sh . t) (R . t) (perl . t) (ditaa . t) ))
+# eval:    (setq org-confirm-babel-evaluate nil)
+# eval:    (unless (boundp 'org-latex-classes) (setq org-latex-classes nil))
+# eval:    (add-to-list 'org-latex-classes '("memoir" "\\documentclass[smallextended]{memoir} \n \[NO-DEFAULT-PACKAGES]\n \[EXTRA]\n  \\usepackage{graphicx}\n  \\usepackage{hyperref}" ("\\chapter{%s}" . "\\chapter*{%s}") ("\\section{%s}" . "\\section*{%s}") ("\\subsection{%s}" . "\\subsection*{%s}")                       ("\\subsubsection{%s}" . "\\subsubsection*{%s}")                       ("\\paragraph{%s}" . "\\paragraph*{%s}")                       ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+# eval:    (add-to-list 'org-latex-classes '("acm-proc-article-sp" "\\documentclass{acm_proc_article-sp}\n \[NO-DEFAULT-PACKAGES]\n \[EXTRA]\n"  ("\\section{%s}" . "\\section*{%s}") ("\\subsection{%s}" . "\\subsection*{%s}")                       ("\\subsubsection{%s}" . "\\subsubsection*{%s}")                       ("\\paragraph{%s}" . "\\paragraph*{%s}")                       ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+# eval:    (setq org-alphabetical-lists t)
+# eval:    (setq org-src-fontify-natively t)
+# eval:   (setq org-export-babel-evaluate nil)
+# eval:   (setq ispell-local-dictionary "english")
+# eval:   (eval (flyspell-mode t))
+# eval:    (setq org-latex-listings 'minted)
+# eval:    (setq org-latex-minted-options '(("bgcolor" "white") ("style" "tango") ("numbers" "left") ("numbersep" "5pt")))
+# End:
