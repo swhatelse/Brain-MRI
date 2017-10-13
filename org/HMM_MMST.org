@@ -281,6 +281,23 @@ D_{k}^{(r+1)} =  \argmin_{D_{k}} \sum_{n=1}^{N} tr \Big[ \D[k] \tdelta[nk][r+1] 
 *** TODO M Step - update degree of freedom \gamma, \delta
 Solving a system of nonlinear equation
 *** TODO M Step - update fields parameters \alpha, \beta
+* TODO Pseudo-code
+# Using ruby syntax just for syntax highlighting
+** Variable declarations
+#+BEGIN_EXAMPLE
+int step
+boolean converged
+int size_x, size_y, size_z
+real obs[size_x][size_y][size_z]
+real q_z[size_x][size_y][size_z]
+#+END_EXAMPLE
+** Body
+#+begin_src ruby
+  while not converged
+    
+    step++ 
+  end
+#+end_src
 * TODO Implementation details
 ** TODO Optimization
 ** TODO Performance analysis
