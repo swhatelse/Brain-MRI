@@ -208,6 +208,18 @@ N: number of observations\\
 a_{km}: m^{th} diagonal element of A_{k}\\
 \[\tilde{\alpha}_{z_{nk}} = \alpha_{zn}^{(r)} + \sum_{m=1}^{M} [ \ln(a_{km}^{(r)}) + \gamma_{km} \ln(\delta_{km}) -
 ln \Gamma(\gamma_{km}) - \tilde{\gamma}_{km} \ln(\tilde{\delta}_{knm}) + \ln \Gamma(\tilde{\gamma}_{km})]\]
+**** DONE Questions [5/5]                                       :noexport:
+- [X] Do we really use the updated z map in side the r iteration?
+  Yes, we do. We take into account the one updated and the one not updated.
+- [X] Would it be wrong to not take into account the modification at
+  step r for easier parallelism?
+  Convergence properties no guarantied.
+- [X] Do we use as well the updated version of \alpha?
+  No it is just updated at each iteration r.
+- [X] Is M the normal dimension of an MST?
+  Yes
+- [X] What are $\tilde{\alpha}_{z_{nk}}$ $\tdelta$ and $\tgamma$?
+  Update of the \alpha for the posterior
 *** TODO E step - Update w|z
 **** Equation
 \begin{equation}
@@ -223,6 +235,12 @@ $\tilde{\delta}_{knm} = \delta_{km} + \frac{1}{2} [ A_{k}^{(r)} D_{k}^{(r)}^{t} 
 D_{k}^{(r)} ]_{mm}$
 
 $\tilde{\gamma}_{km} = \gamma_{km} + \frac{1}{2}$
+
+**** DONE Questions [1/1]                                       :noexport:
+- [X] What is $w_{n}$ ? Which values can it take?
+  Proximité avec le centre de la classe. Plus une observation est
+  proche du centre plus elle à de l'importance. Quantité d'information
+  apporté par une observation.
 *** TODO E step - Update w,z
 **** Equation
 \begin{equation}
@@ -230,6 +248,9 @@ $\tilde{\gamma}_{km} = \gamma_{km} + \frac{1}{2}$
 \end{equation}
 **** Details
 K: number of clusters
+**** DONE Questions [1/1]                                       :noexport:
+- [X] q_{_z_{n}}^{(r+1)} (z_{n} = e_{k}) ?
+  In fact the second term in not in the product and it is as I suspected.
 ** TODO M Step
 *** TODO M step
 - Maximize the expected complete log-likelihood:
@@ -250,6 +271,9 @@ D_{k}^{(r)} \tilde{\Delta}_{nk}^{(r+1)} D_{k}^{(r)}^{t} y_{n }\Big]_{m}}
 \begin{equation}
 D_{k}^{(r+1)} =  \argmin_{D_{k}} \sum_{n=1}^{N} tr \Big[ \D[k] \tdelta[nk][r+1] \A[k][r] \D[k]^{t} (y_{n} - \mu_{k}^{(r+1)}) (y_{n} - \mu_{k}^{(r+1)})^{t} \Big]
 \end{equation}
+**** DONE Questions [1/1]                                       :noexport:
+- [X] What is tr?
+  Trace \to sum of the diagonal values.
 *** TODO M Step - update eigenvalues
 \begin{equation}
 \A[km][r+1] = \frac{ \sum_{n=1}^{N} q_{z_{n}}^{(r+1)} (e_{k}) }{ \sum_{n=1}^{N} q_{z_{n}}^{(r+1)} (e_{k}) \tdelta[nkm][r+1] \big[ \D[k][r+1]^{t} (y_{n }- \mu_{k}^{(r+1)}) \big]_{m}^{2} }
