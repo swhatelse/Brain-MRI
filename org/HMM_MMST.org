@@ -261,25 +261,25 @@ K: number of clusters
   - Step 2:
 *** TODO M Step - Variables
 $\tilde{\Delta}_{nk}^{(r+1)} = \mathbbm{E}_{q_{w_{n}|z_{n} = e_{k}}}^{(r+1)} (\Delta_{n})$
-*** TODO M Step - update mean
+*** TODO M Step - update mean \mu
 \begin{equation}
 \mu_{km}^{(r+1)} = \frac{\sum_{n=1}^{N} q_{z_{n}}^{(r+1)}(e_{k}) \Big[
 D_{k}^{(r)} \tilde{\Delta}_{nk}^{(r+1)} D_{k}^{(r)}^{t} y_{n }\Big]_{m}}
               {\sum_{n=1}^{N} q_{z_{n}}^{(r+1)}(e_{k})}
 \end{equation}
-*** TODO M Step - update eigenvectors
+*** TODO M Step - update eigenvectors D
 \begin{equation}
 D_{k}^{(r+1)} =  \argmin_{D_{k}} \sum_{n=1}^{N} tr \Big[ \D[k] \tdelta[nk][r+1] \A[k][r] \D[k]^{t} (y_{n} - \mu_{k}^{(r+1)}) (y_{n} - \mu_{k}^{(r+1)})^{t} \Big]
 \end{equation}
 **** DONE Questions [1/1]                                       :noexport:
 - [X] What is tr?
   Trace \to sum of the diagonal values.
-*** TODO M Step - update eigenvalues
+*** TODO M Step - update eigenvalues A
 \begin{equation}
 \A[km][r+1] = \frac{ \sum_{n=1}^{N} q_{z_{n}}^{(r+1)} (e_{k}) }{ \sum_{n=1}^{N} q_{z_{n}}^{(r+1)} (e_{k}) \tdelta[nkm][r+1] \big[ \D[k][r+1]^{t} (y_{n }- \mu_{k}^{(r+1)}) \big]_{m}^{2} }
 \end{equation}
-*** TODO M Step - update degree of freedom
-*** TODO M Step - update fields parameters
+*** TODO M Step - update degree of freedom \gamma, \delta
+*** TODO M Step - update fields parameters \alpha, \beta
 * TODO Implementation details
 ** TODO Optimization
 ** TODO Performance analysis
