@@ -217,7 +217,7 @@ q_{w_{n}|z_{n}}^{(r+1)}(w_{n} | z_{n} = e_{k}) = \prod_{m=1}^{M} \tilde{\delta}_
 **** Details 
 :PROPERTIES:
 :END:
-M: Gaussian dimensionality
+M: Gaussian dimensions
 
 $\tilde{\delta}_{knm} = \delta_{km} + \frac{1}{2} [ A_{k}^{(r)} D_{k}^{(r)}^{t} (y_{n} - \mu_{k}^{(r)}) (y_{n} - \mu_{k}^{(r)})^{t}
 D_{k}^{(r)} ]_{mm}$
