@@ -299,7 +299,14 @@ real q_z[size_x][size_y][size_z]
   end
 #+end_src
 * TODO Implementation details
+** TODO Manipulated structures
+** TODO Used Libraries
+*** TODO BOAST
+** TODO Default Implementation
+** TODO Verification
 ** TODO Optimization
+** TODO Task paradigm
+- Using StarPu
 ** TODO Performance analysis
 ** Sandbox                                                         :noexport:
    #+begin_src R :results output :session :exports both
