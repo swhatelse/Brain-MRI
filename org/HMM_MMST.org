@@ -93,21 +93,25 @@
 
 * Glossary
 *** DONE Symbol definitions
-- Y: observed variables
-- Z: latent variables for the clusters, it is Markov field
-- W: latent variables to quantify the observation information
-- \mu: mean
-- D: eigenvectors
-- A: eigenvalues (diagonal matrix)
-- \Sigma: covariance matrix = $DAD^{T}$
-- \gamma: degree of freedom shape
-- \delta: degree of freedom intensity
-- \Theta: clusters parameters = (\mu, \Sigma, \gamma, \delta)
-- \alpha: external field parameters
-- \beta: interaction parameters
-- \psi: (\alpha,\beta) \to parameters of Z
-- S: Sites
-- \Omega(n): Neighbors of n with n \in S
+| Defintion                                                   |
+|-------------------------------------------------------------|
+| Y: observed variables                                       |
+| Z: latent variables for the clusters, it is Markov field    |
+| W: latent variables to quantify the observation information |
+|-------------------------------------------------------------|
+| \mu: mean                                                     |
+| D: eigenvectors                                             |
+| A: eigenvalues (diagonal matrix)                            |
+| \Sigma: covariance matrix = $DAD^{T}$                            |
+| \gamma: degree of freedom shape                                  |
+| \delta: degree of freedom intensity                              |
+| \Theta: clusters parameters = (\mu, \Sigma, \gamma, \delta)                       |
+| \alpha: external field parameters                                |
+| \beta: interaction parameters                                   |
+| \psi: (\alpha,\beta) \to parameters of Z                                  |
+|-------------------------------------------------------------|
+| S: Sites                                                    |
+| \Omega(n): Neighbors of n with n \in S                             |
      
 * TODO Hidden Markov Models with MMST
 ** TODO General
