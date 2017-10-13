@@ -279,6 +279,7 @@ D_{k}^{(r+1)} =  \argmin_{D_{k}} \sum_{n=1}^{N} tr \Big[ \D[k] \tdelta[nk][r+1] 
 \A[km][r+1] = \frac{ \sum_{n=1}^{N} q_{z_{n}}^{(r+1)} (e_{k}) }{ \sum_{n=1}^{N} q_{z_{n}}^{(r+1)} (e_{k}) \tdelta[nkm][r+1] \big[ \D[k][r+1]^{t} (y_{n }- \mu_{k}^{(r+1)}) \big]_{m}^{2} }
 \end{equation}
 *** TODO M Step - update degree of freedom \gamma, \delta
+Solving a system of nonlinear equation
 *** TODO M Step - update fields parameters \alpha, \beta
 * TODO Implementation details
 ** TODO Optimization
