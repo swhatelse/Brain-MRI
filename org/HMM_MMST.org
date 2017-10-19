@@ -386,6 +386,7 @@ real q_z[size_x][size_y][size_z]
 ** TODO Default Implementation
 ** TODO Verification / correctness
 *** correctness
+- What is the delta?
 ** TODO Optimization
 *** TODO Memory access pattern
 *** TODO Parallelism - Task paradigm
