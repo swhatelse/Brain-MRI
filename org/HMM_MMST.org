@@ -92,7 +92,13 @@
 \setbeamertemplate{caption}{\raggedright\insertcaption\par}
 #+END_LaTeX
 
-
+* Objective of this document
+*** Objective of this document
+- *Gather information* to implement HMRF based clustering
+- Documentation of implementation \to *translation* from the formula to the code
+  (pseudo code)
+- Explanation of *optimization strategies* (memory access pattern, GPUs,
+  etc...)\to maybe a tutorial
 * Glossary
 *** DONE Symbol definitions
 # Add the dimension of Y
