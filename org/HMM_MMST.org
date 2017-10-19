@@ -388,6 +388,15 @@ real q_z[size_x][size_y][size_z]
 *** correctness
 ** TODO Optimization
 *** TODO Memory access pattern
+*** TODO Parallelism - Task paradigm
+- Computation = task \to vertexes
+- Dependencies between computation = edges
+- A task cannot start if data not arrived from dependencies
+- As Z is an HMRF it as non-trivial dependencies \to can be modeled as a
+  task graph 
+- We could use StarPU \to  schedule dynamically the tasks according to the
+  dependencies (CPU, GPU, clusters)
+*** TODO Code generation approach and tuning
 ** TODO Task paradigm
 - Using StarPu
 ** TODO Performance analysis
