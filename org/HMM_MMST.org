@@ -379,12 +379,15 @@ real q_z[size_x][size_y][size_z]
   end
 #+end_src
 * TODO Implementation details
-** TODO Manipulated structures
+** TODO Manipulated data structures
 ** TODO Used Libraries
 *** TODO BOAST
+*** TODO StarPU
 ** TODO Default Implementation
+** TODO Verification / correctness
 ** TODO Verification
 ** TODO Optimization
+*** TODO Memory access pattern
 ** TODO Task paradigm
 - Using StarPu
 ** TODO Performance analysis
