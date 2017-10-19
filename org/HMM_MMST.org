@@ -131,32 +131,51 @@
 | \Omega(n): Neighbors of n with n \in S                                                                         |
 #+LaTeX: \normalsize  
 * TODO Hidden Markov Models with MMST
-** TODO General
-*** MMST
-*** Distribution of Z
+** DONE General
+*** Observation probability distribution as MMST
+**** Y - Observation as a MMST
+- Mixture of MST:
+$$MMST(y;\pi,\theta) = \sum_{k=1}^{K} \pi_{k} MST(y;\theta_{k})$$
+
+- A infinite mixture of Gaussians:
+$$MST(y;\mu,\Sigma,\delta,\gamma) = \int_{0}^{\infty} \mathcal{N}_{M}(y;\mu,\Sigma/w)
+\mathcal{G}(w,\delta,\gamma)dw$$
+**** Z - Labels as an HMRF
+$$Z \sim P_{G}(\alpha,\beta)$$
+**** W - Weights as a latent variable
+$$W | Z \sim \mathcal{G}(\delta,\gamma)$$
+*** HMRF                                                         :noexport:
+# Not sure it is really necessary here, we don't care because formulas
+# are already given.
+**** Distribution of Z - Gibbs distribution
 #+BEGIN_LaTeX
 \begin{equation}
 p(z;\psi) = K(\psi)^{-1} exp [H(z;\psi)]
 \end{equation}
 #+END_LaTeX
-*** DONE Energy function
-Let z \in Z
-**** Energy function
-   \begin{equation}
-   H(z; \psi) = \sum_{n=1}^{N} \bigg[ \alpha_{z_n} + \frac{\beta}{2} \sum_{l\in \Omega (n) } \mathbbm{1} (z_n = z_l) \bigg]
-   \end{equation}
+- Energy function
+  \begin{equation}
+  H(z; \psi) = \sum_{n=1}^{N} \bigg[ \alpha_{z_n} + \frac{\beta}{2} \sum_{l\in \Omega (n) } \mathbbm{1} (z_n = z_l) \bigg]
+  \end{equation}
 
-   $\alpha_{z_{n}}$ : weight of the class to which $z_{n}$ belongs\\
-   $\mathbbm{1}(z_n = z_l)$ : Kronecker index \to return 1 if $n$ and $l$
-   have the same label. 
+- With partition function:
+  \begin{equation}
+  K(\psi) = \sum_{z} \exp [H(z; \psi)]
+  \end{equation}
 
-**** Partition function
-   \begin{equation}
-   K(\psi) = \sum_{z} \exp [H(z; \psi)]
-   \end{equation}
-   
-** TODO E Step
-*** TODO E step
+$\alpha_{z_{n}}$ : weight of the class to which $z_{n}$ belongs\\
+$\mathbbm{1}(z_n = z_l)$ : Kronecker index \to return 1 if $n$ and $l$
+have the same label.
+
+*** EM for HMM
+**** E-step
+- Expected complete likelihood \to approximate the posterior $p(w,z|y)$ with $q_{w,z}(w,z)$
+**** M-step
+1. update the mean
+2. update the eigenvectors
+3. update the eigenvalues
+4. update the degree of freedom
+5. update energy parameters
 - compute the expected complete log-likelihood:
   - Posterior probabilities:
     - In the case of HMM, posterior probabilities cannot be computed
