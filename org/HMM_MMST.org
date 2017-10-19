@@ -71,7 +71,9 @@
 
 #+LATEX_HEADER: \newcommand{\step}[1][]{^{(#1)}}
 #+LATEX_HEADER: \newcommand{\eigenv}[2]{D_{#1}\ifthenelse{\equal{#2}{}}{^{(#2)}}{}}
-#+LATEX_HEADER: \DeclareDocumentCommand{\tdelta}{ o o }{\tilde{\Delta} \IfValueT{#1}{_{#1}} \IfValueT{#2}{^{(#2)}}}
+#+LATEX_HEADER: \DeclareDocumentCommand{\talpha}{ o o }{\tilde{\alpha} \IfValueT{#1}{_{#1}} \IfValueT{#2}{^{(#2)}}}
+#+LATEX_HEADER: \DeclareDocumentCommand{\tdelta}{ o o }{\tilde{\delta} \IfValueT{#1}{_{#1}} \IfValueT{#2}{^{(#2)}}}
+#+LATEX_HEADER: \DeclareDocumentCommand{\tDelta}{ o o }{\tilde{\Delta} \IfValueT{#1}{_{#1}} \IfValueT{#2}{^{(#2)}}}
 #+LATEX_HEADER: \DeclareDocumentCommand{\tgamma}{ o o }{\tilde{\gamma} \IfValueT{#1}{_{#1}} \IfValueT{#2}{^{(#2)}}}
 #+LATEX_HEADER: \DeclareDocumentCommand{\A}{ o o }{ A \IfValueT{#1}{_{#1}} \IfValueT{#2}{^{(#2)}}}
 #+LATEX_HEADER: \DeclareDocumentCommand{\D}{ o o }{ D \IfValueT{#1}{_{#1}} \IfValueT{#2}{^{(#2)}}}
@@ -262,8 +264,8 @@ $\tilde{\Delta}_{nk}^{(r+1)} = \mathbbm{E}_{q_{w_{n}|z_{n} = e_{k}}}^{(r+1)} (\D
 *** TODO M Step - update mean \mu
 \begin{equation}
 \mu_{km}^{(r+1)} = \frac{\sum_{n=1}^{N} q_{z_{n}}^{(r+1)}(e_{k}) \Big[
-D_{k}^{(r)} \tilde{\Delta}_{nk}^{(r+1)} D_{k}^{(r)}^{t} y_{n }\Big]_{m}}
-              {\sum_{n=1}^{N} q_{z_{n}}^{(r+1)}(e_{k})}
+D_{k}^{(r)} \tDelta[nk][r+1] D_{k}^{(r)}^{t} y_{n }\Big]_{m}}
+              {\sum_{n=1}^{N} q_{z_{n}}^{(r+1)}(e_{k}) \tDelta[nkm][r+1]}
 \end{equation}
 *** TODO M Step - update eigenvectors D
 \begin{equation}
@@ -274,7 +276,7 @@ D_{k}^{(r+1)} =  \argmin_{D_{k}} \sum_{n=1}^{N} tr \Big[ \D[k] \tdelta[nk][r+1] 
   Trace \to sum of the diagonal values.
 *** TODO M Step - update eigenvalues A
 \begin{equation}
-\A[km][r+1] = \frac{ \sum_{n=1}^{N} q_{z_{n}}^{(r+1)} (e_{k}) }{ \sum_{n=1}^{N} q_{z_{n}}^{(r+1)} (e_{k}) \tdelta[nkm][r+1] \big[ \D[k][r+1]^{t} (y_{n }- \mu_{k}^{(r+1)}) \big]_{m}^{2} }
+\A[km][r+1] = \frac{ \sum_{n=1}^{N} q_{z_{n}}^{(r+1)} (e_{k}) }{ \sum_{n=1}^{N} q_{z_{n}}^{(r+1)} (e_{k}) \tDelta[nkm][r+1] \big[ \D[k][r+1]^{t} (y_{n }- \mu_{k}^{(r+1)}) \big]_{m}^{2} }
 \end{equation}
 *** TODO M Step - update degree of freedom \gamma, \delta
 Solving a system of nonlinear equation
