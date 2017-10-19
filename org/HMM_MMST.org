@@ -397,9 +397,12 @@ real q_z[size_x][size_y][size_z]
 - We could use StarPU \to  schedule dynamically the tasks according to the
   dependencies (CPU, GPU, clusters)
 *** TODO Code generation approach and tuning
-** TODO Task paradigm
-- Using StarPu
-** TODO Performance analysis
+**** Maybe BOAST?
+- Meta-programming framework: ruby \to C, Fortran, CUDA, OpenCL
+- Generate multiple variant of same code e.g. loop unrolled,
+  vectorized, size of tiling, etc...
+- *Portable optimization*
+*** TODO Performance analysis
 ** Sandbox                                                         :noexport:
    #+begin_src R :results output :session :exports both
      library("png")
