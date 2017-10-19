@@ -385,7 +385,7 @@ real q_z[size_x][size_y][size_z]
 *** TODO StarPU
 ** TODO Default Implementation
 ** TODO Verification / correctness
-** TODO Verification
+*** correctness
 ** TODO Optimization
 *** TODO Memory access pattern
 ** TODO Task paradigm
