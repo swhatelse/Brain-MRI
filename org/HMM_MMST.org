@@ -176,6 +176,22 @@ have the same label.
 3. update the eigenvalues
 4. update the degree of freedom
 5. update energy parameters
+** DONE E Step
+*** DONE E-step
+- Complete likelihood:
+  $$p(y,w,z|\theta) = p(w,z|\psi,\delta,\gamma) p(y|w,z,\theta)$$
+
+- Posterior approximation:
+  - W, Z
+  - W | Z
+  - Z
+
+However Z cannot be computed \to approximated using variational methods
+(mean field approximation).
+
+Thus the posterior is computed at each site.
+*** E step                                                       :noexport:
+# Do details to explain the e-step, maybe more general explanation
 - compute the expected complete log-likelihood:
   - Posterior probabilities:
     - In the case of HMM, posterior probabilities cannot be computed
@@ -195,7 +211,9 @@ have the same label.
       q_i^{t+1}(w_i,z_i) \propto exp \bigg[\mathbbm{E}_q_{i}^{t} \ln p(w_i,z_i|y, W_i^t, Z_i^t; \phi^t)\bigg]
       \end{equation}
       #+END_LaTeX
-*** TODO E step - Expected posterior
+*** E step - Expected posterior                                  :noexport:
+# Not really needed because we are find the posterior with the
+# equation further below
 - Expected posterior:
   \begin{equation}
   \begin{split}
@@ -206,18 +224,20 @@ have the same label.
   + \sum_{k=1}^{K} \mathbb(I)_{e_{k}} [ \tilde{\alpha}_{z_{nk}} + \frac{\beta^{(r)}}{2} \sum_{l \in \Omega(n)} q_{z_{l}}^{(r)}(e_{k})]
   \end{split}
   \end{equation}
+*** DONE E step - Initialization
+$q_{z_{n}}$ can be initialized at random or with an algorithm such as k-means
+**** TODO Questions [0/1]
+- [ ] How are initialized \alpha, \beta, \gamma, \delta ?
 *** DONE E step - variables
-N: Number of observations
+$\alpha_{z_{n}}$: external field for each site
 
-K: Number of mixture components (clusters)
-
-M: Normal dimensions
-
-$\delta_{km}$: degree of freedom intensity of the m^{th} normal in the k^{th}
+$\delta_{km}$: degree of freedom intensity of the $m^{th}$ normal in the $k^{th}$
 cluster.
 
-$\gamma_{km}$: degree of freedom shape of the m^{th} normal in the k^{th}
+$\gamma_{km}$: degree of freedom shape of the $m^{th}$ normal in the $k^{th}$
 cluster.
+
+$a_{km}$: $m^{th}$ diagonal element of $A_{k}$
 
 $\tilde{\delta}_{knm} = \delta_{km} + \frac{1}{2} [ A_{k}^{(r)} D_{k}^{(r)}^{t} (y_{n} - \mu_{k}^{(r)}) (y_{n} - \mu_{k}^{(r)})^{t}
           D_{k}^{(r)} ]_{mm}$
@@ -226,9 +246,7 @@ $\tilde{\gamma}_{km} = \gamma_{km} + \frac{1}{2}$
 
 \[\tilde{\alpha}_{z_{nk}} = \alpha_{zn}^{(r)} + \sum_{m=1}^{M} [ \ln(a_{km}^{(r)}) + \gamma_{km} \ln(\delta_{km}) -
              ln \Gamma(\gamma_{km}) - \tilde{\gamma}_{km} \ln(\tilde{\delta}_{knm}) + \ln \Gamma(\tilde{\gamma}_{km})]\]
-*** TODO E step - Initialization
-q_{z_{n}} can be initialized at random or with an algorithm such as k-means
-*** TODO E step - Update z
+*** DONE E step - Update z
 **** Equation
 \begin{equation}
 q_{z_{n}}^{(r+1)}(e_{k}) = \frac{ exp[ \tilde{\alpha}_{z_{nk}} +
@@ -236,13 +254,7 @@ q_{z_{n}}^{(r+1)}(e_{k}) = \frac{ exp[ \tilde{\alpha}_{z_{nk}} +
       {\sum_{j=1}^{K} exp[ \tilde{\alpha}_{z_{nj}} +
       \frac{\beta^{(r)}}{2} \sum_{l \in \Omega(n)} q_{z_{l}}^{(r)} (e_{j})]}
 \end{equation}
-**** Details
-K: number of clusters\\
-N: number of observations\\
-a_{km}: m^{th} diagonal element of A_{k}\\
-\[\tilde{\alpha}_{z_{nk}} = \alpha_{zn}^{(r)} + \sum_{m=1}^{M} [ \ln(a_{km}^{(r)}) + \gamma_{km} \ln(\delta_{km}) -
-ln \Gamma(\gamma_{km}) - \tilde{\gamma}_{km} \ln(\tilde{\delta}_{knm}) + \ln \Gamma(\tilde{\gamma}_{km})]\]
-**** DONE Questions [5/5]                                       :noexport:
+**** DONE Questions [5/5]
 - [X] Do we really use the updated z map in side the r iteration?
   Yes, we do. We take into account the one updated and the one not updated.
 - [X] Would it be wrong to not take into account the modification at
@@ -250,41 +262,36 @@ ln \Gamma(\gamma_{km}) - \tilde{\gamma}_{km} \ln(\tilde{\delta}_{knm}) + \ln \Ga
   Convergence properties no guarantied.
 - [X] Do we use as well the updated version of \alpha?
   No it is just updated at each iteration r.
-- [X] Is M the normal dimension of an MST?
+- [X] Is M the normal dimension of a MST?
   Yes
-- [X] What are $\tilde{\alpha}_{z_{nk}}$ $\tdelta$ and $\tgamma$?
-  Update of the \alpha for the posterior
-*** TODO E step - Update w|z
+- [X] What are $\tilde{\alpha}_{z_{nk}}$ $\delta$ and $\gamma$?
+  +Update of the \alpha $\tdelta$ and $\tgamma$ for the posterior.+
+  They are just a re-writing to expose the gamma distribution.
+*** DONE E step - Update w|z
 **** Equation
 \begin{equation}
 q_{w_{n}|z_{n}}^{(r+1)}(w_{n} | z_{n} = e_{k}) = \prod_{m=1}^{M} \tilde{\delta}_{knm}^{\tilde{\gamma}_{km}} \Gamma(\tilde{\gamma}_{km})^{-1} w_{nm}^{(\tilde{\gamma}_{km}-1)} exp(- \tilde{\delta}_{knm} w_{nm})
 \end{equation}
 
-**** Details 
-:PROPERTIES:
-:END:
-M: Gaussian dimensions
-
-$\tilde{\delta}_{knm} = \delta_{km} + \frac{1}{2} [ A_{k}^{(r)} D_{k}^{(r)}^{t} (y_{n} - \mu_{k}^{(r)}) (y_{n} - \mu_{k}^{(r)})^{t}
-D_{k}^{(r)} ]_{mm}$
-
-$\tilde{\gamma}_{km} = \gamma_{km} + \frac{1}{2}$
-
-**** DONE Questions [1/1]                                       :noexport:
+**** Remarks
+- Here we can spot that this is just a product of gamma distributions
+**** DONE Questions [1/1]
 - [X] What is $w_{n}$ ? Which values can it take?
-  Proximité avec le centre de la classe. Plus une observation est
-  proche du centre plus elle à de l'importance. Quantité d'information
-  apporté par une observation.
-*** TODO E step - Update w,z
+  It is the proximity of an observation to the center of the
+  class. The closer from the center, the more important. In other
+  words it is the quantity of information provided by an observation.
+  # Proximité avec le centre de la classe. Plus une observation est
+  # proche du centre plus elle à de l'importance. Quantité d'information
+  # apporté par une observation.
+*** DONE E step - Update w,z
 **** Equation
 \begin{equation}
-q_{w_{n},z_{n}}^{(r+1)}(w_{n},z_{n}) =  \prod_{k=1}^{K} q_{w_{n}|z_{n}}^{(r+1)}(w_{n} | z_{n} = e_{k}) . q_{z_{n}}^{(r+1)}(e_{k})
+q_{w_{n},z_{n}}^{(r+1)}(w_{n},z_{n}) =  \prod_{k=1}^{K} q_{w_{n}|z_{n}}^{(r+1)}(w_{n} | z_{n} = e_{k}) . q_{z_{n}}^{(r+1)}(z_{n}_{})
 \end{equation}
-**** Details
-K: number of clusters
-**** DONE Questions [1/1]                                       :noexport:
-- [X] q_{_z_{n}}^{(r+1)} (z_{n} = e_{k}) ?
-  In fact the second term in not in the product and it is as I suspected.
+
+**** DONE Questions [1/1]
+- [X] $q_{_z_{n}}^{(r+1)} (z_{n} = e_{k})$ ?
+  In fact the second term in not in the product as I suspected.
 ** TODO M Step
 *** TODO M step
 - Maximize the expected complete log-likelihood:
