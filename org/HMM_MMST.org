@@ -95,26 +95,35 @@
 
 * Glossary
 *** DONE Symbol definitions
-| Defintion                                                   |
-|-------------------------------------------------------------|
-| Y: observed variables                                       |
-| Z: latent variables for the clusters, it is Markov field    |
-| W: latent variables to quantify the observation information |
-|-------------------------------------------------------------|
-| \mu: mean                                                     |
-| D: eigenvectors                                             |
-| A: eigenvalues (diagonal matrix)                            |
-| \Sigma: covariance matrix = $DAD^{T}$                            |
-| \gamma: degree of freedom shape                                  |
-| \delta: degree of freedom intensity                              |
-| \Theta: clusters parameters = (\mu, \Sigma, \gamma, \delta)                       |
-| \alpha: external field parameters                                |
-| \beta: interaction parameters                                   |
-| \psi: (\alpha,\beta) \to parameters of Z                                  |
-|-------------------------------------------------------------|
-| S: Sites                                                    |
-| \Omega(n): Neighbors of n with n \in S                             |
-     
+# Add the dimension of Y
+#+LaTeX: \scriptsize
+| Definition                                                                                              |
+|---------------------------------------------------------------------------------------------------------|
+| N: Number of observations                                                                               |
+| M: Number of gaussian components in a MST                                                               |
+| K: Number of clusters                                                                                   |
+|---------------------------------------------------------------------------------------------------------|
+| $Y = {Y_{1},...,Y_{N}}, Y_{n} \in [1,N]$: observed variables                                                       |
+| $Z = {Z_{1},...,Z_{N}}, Z_{n} \in [1,N]$: HMRF for the clusters (Gibbs distribution)                               |
+| $W = {W_{1},...,W_{N}}, W_{n} \in (\mathbb{R}_{+}^{*})^{M}$: latent variable to quantify the observation information        |
+|---------------------------------------------------------------------------------------------------------|
+| \mu: mean                                                                                                 |
+| D: eigenvectors                                                                                         |
+| A: eigenvalues (diagonal matrix)                                                                        |
+| \Sigma: covariance matrix = $DAD^{T}$                                                                           |
+| \gamma: degree of freedom shape of the Gamma Law MST                                                         |
+| \delta: degree of freedom intensity of the Gamma Law MST                                                     |
+| $\Theta = (\mu, \Sigma, \gamma, \delta)$: clusters parameters                                                                 |
+| \alpha: external field parameters of Z                                                                       |
+| \beta: interaction parameters of Z                                                                          |
+| $\psi = (\alpha,\beta)$: parameters of Z                                                                            |
+| $\talpha$: parameters of the conjugate distribution                                                     |
+| $\tdelta$: parameters of the conjugate distribution                                                     |
+| $\tgamma$: parameters of the conjugate distribution                                                     |
+|---------------------------------------------------------------------------------------------------------|
+| S: Sites                                                                                                |
+| \Omega(n): Neighbors of n with n \in S                                                                         |
+#+LaTeX: \normalsize  
 * TODO Hidden Markov Models with MMST
 ** TODO General
 *** MMST
