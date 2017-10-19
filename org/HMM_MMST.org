@@ -293,35 +293,74 @@ q_{w_{n},z_{n}}^{(r+1)}(w_{n},z_{n}) =  \prod_{k=1}^{K} q_{w_{n}|z_{n}}^{(r+1)}(
 - [X] $q_{_z_{n}}^{(r+1)} (z_{n} = e_{k})$ ?
   In fact the second term in not in the product as I suspected.
 ** TODO M Step
-*** TODO M step
+*** DONE M step
 - Maximize the expected complete log-likelihood:
   - Step 1:
     - Update the mean
     - Update the eigenvectors
     - Update the eigenvalues
   - Step 2:
+    - Update degree of freedom
+  - Step 3:
+    - Update Gibbs distribution parameters
 *** TODO M Step - Variables
 $\tilde{\Delta}_{nk}^{(r+1)} = \mathbbm{E}_{q_{w_{n}|z_{n} = e_{k}}}^{(r+1)} (\Delta_{n})$
-*** TODO M Step - update mean \mu
+**** TODO Questions [0/3]
+- [ ] How do we compute it? Is it something like:
+$\mathbbm{E}_{q_{w_{n}|z_{n} = e_{k}}}^{(r+1)} (\Delta_{n}) = \int_{0}^{\infty}
+\Delta_{n} q_{w_{n},z_{n}}(w_{n},z_{n})$
+
+- [ ] How what do we integrate? \Delta?
+
+- [ ] Is it supposed to be $\Delta_{n}^{(r)$} instead of just $\Delta_{n}$?
+*** DONE M Step - update mean \mu
+**** Equation
 \begin{equation}
 \mu_{km}^{(r+1)} = \frac{\sum_{n=1}^{N} q_{z_{n}}^{(r+1)}(e_{k}) \Big[
 D_{k}^{(r)} \tDelta[nk][r+1] D_{k}^{(r)}^{t} y_{n }\Big]_{m}}
               {\sum_{n=1}^{N} q_{z_{n}}^{(r+1)}(e_{k}) \tDelta[nkm][r+1]}
 \end{equation}
 *** TODO M Step - update eigenvectors D
+**** Equation
 \begin{equation}
-D_{k}^{(r+1)} =  \argmin_{D_{k}} \sum_{n=1}^{N} tr \Big[ \D[k] \tdelta[nk][r+1] \A[k][r] \D[k]^{t} (y_{n} - \mu_{k}^{(r+1)}) (y_{n} - \mu_{k}^{(r+1)})^{t} \Big]
+D_{k}^{(r+1)} =  \argmin_{D_{k}} \sum_{n=1}^{N} tr \Big[ \D[k] \tDelta[nk][r+1] \A[k][r] \D[k]^{t} (y_{n} - \mu_{k}^{(r+1)}) (y_{n} - \mu_{k}^{(r+1)})^{t} \Big]
 \end{equation}
+**** Remarks
+- The space of the orthogonal matrix $D_{k}$ is not convex \to use Flury and
+  Gautschi algorithm.
+ 
+- $tr$ \to trace function
 **** DONE Questions [1/1]                                       :noexport:
 - [X] What is tr?
   Trace \to sum of the diagonal values.
-*** TODO M Step - update eigenvalues A
+*** DONE M Step - update eigenvalues A
+**** Equation
 \begin{equation}
 \A[km][r+1] = \frac{ \sum_{n=1}^{N} q_{z_{n}}^{(r+1)} (e_{k}) }{ \sum_{n=1}^{N} q_{z_{n}}^{(r+1)} (e_{k}) \tDelta[nkm][r+1] \big[ \D[k][r+1]^{t} (y_{n }- \mu_{k}^{(r+1)}) \big]_{m}^{2} }
 \end{equation}
-*** TODO M Step - update degree of freedom \gamma, \delta
-Solving a system of nonlinear equation
+*** DONE M Step - update degree of freedom \gamma, \delta
+Solving a system of nonlinear equation:
+
+\begin{cases}
+\Psi(\gamma_{km}) = \Psi(\gamma_{km}^{(r+1)}) + \frac{\sum_{n=1}^{N} q_{z_{n}}(e_{k})\ln(\frac{\tdelta[nkm]}
+                                                {\tdelta[nkm][r+1]})}
+                         {\sum_{l=1}^{N} q_{z_{l}}(e_{k})}\\
+\tdelta[nkm] = \tdelta[nkm][r+1] \frac{\gamma_{km}}{\gamma_{km}^{(r+1)}}\\
+\delta_{km} = 1
+\end{cases}
+**** Remarks
+- They are tilde somewhere but I am not sure where...
+- The second line is a constant, but I don't see why...
+- Still not sure how to solve the systems...
+
 *** TODO M Step - update fields parameters \alpha, \beta
+- This step is skipped for now, the optimization of \alpha and \beta is tricky to
+  do, and $SpaceM^{3}$ as already something to do this.
+
+- For now $\alpha_{z_{n}}$ can be set to $w_{n}$.
+**** TODO Questions [0/1]
+- [ ] But what about \beta?
+
 * TODO Pseudo-code
 # Using ruby syntax just for syntax highlighting
 ** Variable declarations
