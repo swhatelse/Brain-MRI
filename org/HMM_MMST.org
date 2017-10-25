@@ -226,8 +226,12 @@ Thus the posterior is computed at each site.
   \end{equation}
 *** DONE E step - Initialization
 $q_{z_{n}}$ can be initialized at random or with an algorithm such as k-means
-**** TODO Questions [0/1]
-- [ ] How are initialized \alpha, \beta, \gamma, \delta ?
+**** DONE Questions [1/1]
+- [X] How are initialized \alpha, \beta, \gamma, \delta ?
+  One of the \alpha value can be initialized to 0 and the others to 1/k.
+  But if we initialize with k-mean we do not need to initialized the
+  above variables and we can start at M-step to update the
+  parameters.
 *** DONE E step - variables
 $\alpha_{z_{n}}$: external field for each site
 
@@ -256,7 +260,7 @@ q_{z_{n}}^{(r+1)}(e_{k}) = \frac{ exp[ \tilde{\alpha}_{z_{nk}} +
 \end{equation}
 **** DONE Questions [5/5]
 - [X] Do we really use the updated z map in side the r iteration?
-  Yes, we do. We take into account the one updated and the one not updated.
+  Yes, we take into account the updated one and also the not updated one.
 - [X] Would it be wrong to not take into account the modification at
   step r for easier parallelism?
   Convergence properties no guarantied.
@@ -289,9 +293,10 @@ q_{w_{n}|z_{n}}^{(r+1)}(w_{n} | z_{n} = e_{k}) = \prod_{m=1}^{M} \tilde{\delta}_
 q_{w_{n},z_{n}}^{(r+1)}(w_{n},z_{n}) =  \prod_{k=1}^{K} q_{w_{n}|z_{n}}^{(r+1)}(w_{n} | z_{n} = e_{k}) . q_{z_{n}}^{(r+1)}(z_{n}_{})
 \end{equation}
 
-**** DONE Questions [1/1]
+**** TODO Questions [1/2]
 - [X] $q_{_z_{n}}^{(r+1)} (z_{n} = e_{k})$ ?
   In fact the second term in not in the product as I suspected.
+- [ ] Check if we really need to compute w,z.
 ** TODO M Step
 *** DONE M step
 - Maximize the expected complete log-likelihood:
@@ -305,14 +310,16 @@ q_{w_{n},z_{n}}^{(r+1)}(w_{n},z_{n}) =  \prod_{k=1}^{K} q_{w_{n}|z_{n}}^{(r+1)}(
     - Update Gibbs distribution parameters
 *** TODO M Step - Variables
 $\tilde{\Delta}_{nk}^{(r+1)} = \mathbbm{E}_{q_{w_{n}|z_{n} = e_{k}}}^{(r+1)} (\Delta_{n})$
-**** TODO Questions [0/3]
+**** TODO Questions [2/3]
 - [ ] How do we compute it? Is it something like:
 $\mathbbm{E}_{q_{w_{n}|z_{n} = e_{k}}}^{(r+1)} (\Delta_{n}) = \int_{0}^{\infty}
-\Delta_{n} q_{w_{n},z_{n}}(w_{n},z_{n})$
+\Delta_{n} q_{w_{n}|z_{n}}(w_{n},z_{n})dw_{n}$
 
-- [ ] How what do we integrate? \Delta?
+- [X] On what do we integrate? \Delta?
+  We integrate on w_{n}.
 
-- [ ] Is it supposed to be $\Delta_{n}^{(r)$} instead of just $\Delta_{n}$?
+- [X] Is it supposed to be $\Delta_{n}^{(r)$} instead of just $\Delta_{n}$?
+  No because \Delta_{n} does not change, only the esperance change because of q_{w_{n}|z_{n}}.
 *** DONE M Step - update mean \mu
 **** Equation
 \begin{equation}
@@ -358,8 +365,9 @@ Solving a system of nonlinear equation:
   do, and $SpaceM^{3}$ as already something to do this.
 
 - For now $\alpha_{z_{n}}$ can be set to $w_{n}$.
-**** TODO Questions [0/1]
-- [ ] But what about \beta?
+**** DONE Questions [1/1]
+- [X] But what about \beta?
+  Can be set to any positive value and increased at each iteration.
 
 * TODO Pseudo-code
 # Using ruby syntax just for syntax highlighting
