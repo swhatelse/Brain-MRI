@@ -132,13 +132,17 @@
 #+LaTeX: \normalsize  
 * TODO Hidden Markov Models with MMST
 ** DONE General
-*** Observation probability distribution as MMST
-**** Y - Observation as a MMST
+*** Random Variables
+**** TODO Y - Observation as a MMST
 - Mixture of MST:
 $$MMST(y;\pi,\theta) = \sum_{k=1}^{K} \pi_{k} MST(y;\theta_{k})$$
 
+# TODO: 
+# - The formula is not correct 
+# - maybe it is not useful have this here. 
+# - The dimensionality of the gaussian is not correct
 - A infinite mixture of Gaussians:
-$$MST(y;\mu,\Sigma,\delta,\gamma) = \int_{0}^{\infty} \mathcal{N}_{M}(y;\mu,\Sigma/w)
+$$MST(y;\mu,\Sigma,\delta,\gamma) = \int_{0}^{\infty} \mathcal{N}_{M}(y;\mu,D\Delta_{w}^{-1}AD^{T})
 \mathcal{G}(w,\delta,\gamma)dw$$
 **** Z - Labels as an HMRF
 $$Z \sim P_{G}(\alpha,\beta)$$
@@ -233,7 +237,7 @@ $q_{z_{n}}$ can be initialized at random or with an algorithm such as k-means
   above variables and we can start at M-step to update the
   parameters.
 *** DONE E step - variables
-$\alpha_{z_{n}}$: external field for each site
+$\alpha_{z_{n}}$: external field for the corresponding label for the site n
 
 $\delta_{km}$: degree of freedom intensity of the $m^{th}$ normal in the $k^{th}$
 cluster.
@@ -309,7 +313,11 @@ q_{w_{n},z_{n}}^{(r+1)}(w_{n},z_{n}) =  \prod_{k=1}^{K} q_{w_{n}|z_{n}}^{(r+1)}(
   - Step 3:
     - Update Gibbs distribution parameters
 *** TODO M Step - Variables
-$\tilde{\Delta}_{nk}^{(r+1)} = \mathbbm{E}_{q_{w_{n}|z_{n} = e_{k}}}^{(r+1)} (\Delta_{n})$
+# TODO:
+# - Add how the formula was found 
+$\tilde{\Delta}_{nk}^{(r+1)} = \mathbbm{E}_{q_{w_{n}|z_{n} = e_{k}}}^{(r+1)} (\Delta_{n}) =
+\frac{\tgamma[mk][r]}{\tdelta[nkm][r]}$
+
 **** TODO Questions [2/3]
 - [ ] How do we compute it? Is it something like:
 $\mathbbm{E}_{q_{w_{n}|z_{n} = e_{k}}}^{(r+1)} (\Delta_{n}) = \int_{0}^{\infty}
@@ -349,10 +357,9 @@ D_{k}^{(r+1)} =  \argmin_{D_{k}} \sum_{n=1}^{N} tr \Big[ \D[k] \tDelta[nk][r+1] 
 Solving a system of nonlinear equation:
 
 \begin{cases}
-\Psi(\gamma_{km}) = \Psi(\gamma_{km}^{(r+1)}) + \frac{\sum_{n=1}^{N} q_{z_{n}}(e_{k})\ln(\frac{\tdelta[nkm]}
+\Psi(\gamma_{km}) = \Psi(\gamma_{km}^{(r+1)}) + \frac{\sum_{n=1}^{N} q_{z_{n}}(e_{k})\ln(\frac{\delta_{km}}
                                                 {\tdelta[nkm][r+1]})}
                          {\sum_{l=1}^{N} q_{z_{l}}(e_{k})}\\
-\tdelta[nkm] = \tdelta[nkm][r+1] \frac{\gamma_{km}}{\gamma_{km}^{(r+1)}}\\
 \delta_{km} = 1
 \end{cases}
 **** Remarks
