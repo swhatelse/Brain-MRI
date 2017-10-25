@@ -389,14 +389,22 @@ real q_z[size_x][size_y][size_z]
 - What is the delta?
 ** TODO Optimization
 *** TODO Memory access pattern
-*** TODO Parallelism - Task paradigm
+*** DONE Parallelism - Task paradigm
+**** Problem
+- *Heterogeneity* of the machines \to Mixing paradigm \to OpenMP,
+  CUDA/OpenCL, MPI, etc...
+- *Greater number of cores* \to useless if number of
+  cores x2 but half stay idle...
+- Facing *load balancing* problems
+
+**** Task Graph
 - Computation = task \to vertexes
 - Dependencies between computation = edges
 - A task cannot start if data not arrived from dependencies
-- As Z is an HMRF it as non-trivial dependencies \to can be modeled as a
+- As Z is an HMRF it as non-trivial dependencies \to modeled as a
   task graph 
-- We could use StarPU \to  schedule dynamically the tasks according to the
-  dependencies (CPU, GPU, clusters)
+- We could use StarPU \to handle load balancing & 1 paradigm to target
+  CPU, GPGPU and clusters.
 *** TODO Code generation approach and tuning
 **** Maybe BOAST?
 - Meta-programming framework: ruby \to C, Fortran, CUDA, OpenCL
