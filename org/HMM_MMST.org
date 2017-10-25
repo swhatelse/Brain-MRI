@@ -403,6 +403,38 @@ real q_z[size_x][size_y][size_z]
 - Generate multiple variant of same code e.g. loop unrolled,
   vectorized, size of tiling, etc...
 - *Portable optimization*
+- *Code factorization*
+- Easier to evaluate performances...
+- ... but does it mix well with StarPU and other libraries like Armadillo
+*** BOAST example
+#+BEGIN_SRC ruby
+require 'narray'
+require 'BOAST'
+include BOAST
+
+set_array_start(0)
+set_default_real_size(4)
+
+def vector_add
+  n = Int("n",:dir => :in)
+  a = Real("a",:dir => :in, :dim => [ Dim(n)] )
+  b = Real("b",:dir => :in, :dim => [ Dim(n)] )
+  c = Real("c",:dir => :out, :dim => [ Dim(n)] )
+  p = Procedure("vector_add", [n,a,b,c]) {
+    decl i = Int("i")
+    expr = c[i] === a[i] + b[i]
+    if (get_lang == CL or get_lang == CUDA) then
+      pr i === get_global_id(0)
+      pr expr
+    else
+      pr For(i,0,n-1) {
+        pr expr
+      }
+    end
+  }
+  return p.ckernel
+end
+#+END_SRC
 *** TODO Performance analysis
 ** Sandbox                                                         :noexport:
    #+begin_src R :results output :session :exports both
