@@ -376,23 +376,317 @@ Solving a system of nonlinear equation:
 - [X] But what about \beta?
   Can be set to any positive value and increased at each iteration.
 
-* TODO Pseudo-code
+* TODO Pseudo-code [0/2]
+ 
+Let assume a column major structure of arrays.
 # Using ruby syntax just for syntax highlighting
-** Variable declarations
+** TODO Variable declarations [0/1]
+- [ ] Find the best suited structure/indexing for each arrays
 #+BEGIN_EXAMPLE
-int step
-boolean converged
-int size_x, size_y, size_z
-real obs[size_x][size_y][size_z]
-real q_z[size_x][size_y][size_z]
+  int step
+  boolean converged
+  real thresold
+
+  # Problem size
+  int X, Y, Z # image size
+  int nb_clusters # will change during EM iteration
+  int obs_dimension
+  real obs[obs_dimension][X][Y][Z] # observations vectors should be an effective implementation to take advantage of vector operation
+  boolean labels[nb_clusters][X][Y][Z]
+
+  # Random variables
+  real q_z[X][Y][Z][nb_clusters]
+
+  # Model parameters
+  real mean[obs_dimension][nb_clusters]
+  real eigen_vectors[obs_dimension][obs_dimension][nb_clusters] # D
+  real eigen_values[obs_dimension][obs_dimension][nb_clusters] # diagonal matrix A
+  real delta[nb_clusters][obs_dimension]
+  real gamma[nb_clusters][obs_dimension]
+  real alpha[nb_clusters]
+  real beta
+
+  # Parameters of the posterior
+  real freedom_degree_intensity_posterior[obs_dimension][X][Y][Z][nb_clusters]
+  real gamma_p[nb_clusters][obs_dimension]
+  real alpha_p[X][Y][Z][nb_clusters]
+
+  real a[obs_dimension] # A as a vector
 #+END_EXAMPLE
-** Body
-#+begin_src ruby
+
+** TODO Algorithms [0/1]
+- [ ] Characteristics of the kernels
+#+BEGIN_EXAMPLE
+  converged = false
+
+  # Initialization
   while not converged
+    ## E-step
+    # Compute degree of freedom intensity posterior: tilde delta
+  
+    # Compute degree of freedom shape posterior: tilde gamma
+  
+    # Compute external field posterior: tilde alpha
+
+    # update q(zn)
+    # update q(wn|zn)
+    # update q(wn,zn)
+    # update mean
     
-    step++ 
+    ## M-step
+    # update mean
+    # upate eigenvectors
+    # update eigenvalues
+    # update degree of freedom
+    # update parameters fields
+
+    if new_likelihood - likelihood < thresold 
+      converged = true
+    end
+    step += 1
   end
-#+end_src
+#+END_EXAMPLE
+
+*** Posterior parameters
+**** Degree of freedom shape
+The order of the loops needs to match the structure of the data in
+order to minimize the memory accesses. So the most inner loop
+correspond the most right index in column major order and the opposite
+in a row major order.
+#+BEGIN_SRC ruby
+  for m in [0..obs_dimension-1]
+    for k in [0..nb_clusters-1]
+      gamma_p[k][m] = gamma[k][m] + 1/2
+    end
+  end
+#+END_SRC
+***** Kernel Characteristics
+- m \times k loads
+- m \times k adds
+- m \times k stores
+Twice more memory access than arithmetical operations.
+Should be bandwidth bound (at least on CPU).
+**** Degree of freedom intensity
+***** DONE Naive algo
+#+BEGIN_SRC ruby
+  real temp[obs_dimension][obs_dimension]
+  for k in [0..nb_clusters-1]
+    for x in [0..X-1]
+      for y in [0..Y-1]
+        for z in [0..Z-1]
+          temp = eigen_value[k] * transpose(eigen_vector[k]) * (obs[x][y][z] - mean[k]) * transpose(obs[x][y][z] - mean[k]) * eigen_vector[k]
+          for m in [0..obs_dimension-1]
+            freedom_degree_intensity_posterior[m][k][x][y][z] = delta[k][m] + 1/2 * temp[m][m]
+          end
+        end
+      end
+    end
+  end
+#+END_SRC
+****** DONE Kernel characteristics [3/3]
+
+| a: add     |
+| p: product |
+| l: load    |
+| s: store   | 
+  
+- matrix multiply = $m^{3}(p + a + 3l + s)$
+
+- [X] Complexity: /kxyz/ \times temp + /kxyzm/ \times
+  freedom_degree_intensity_posterior = $kxyz(2m^{3}(3l + p + a + s) + m^{2}(7l +
+  2p + 2a + 3s) + m(7l + 4s + 2a + p))$ 
+
+- [X] temp: 2m^{3}(3l + p + a + s) + m^{2}(7l + 2p + 2a + 3s) + m(5l + 3s + a)
+  - 1 matrix multiply 
+  - + 1 matrix vector multiply \to $m²(3l + p + a + s)$
+  - + 1 vector transposed vector multiply \to $m²(3l + p + a + s)$
+  - + 1 matrix multiply
+  - + 2 vector adds \to  /m(2l + s + a)/
+  - + 1 matrix transpose \to /m²(l + s)/
+  - + 1 vector transpose \to $m(l + s)$
+  
+- [X] freedom_degree_intensity_posterior: s + 2l + a + p
+
+***** V2
+- In the naive algo, some terms used to compute =temp= only depends on
+  =k= and thus can be reuse over iterations of inner loops. These terms
+  can be computed /k/ times instead of /k \times x \times y \times z \times m/
+  times. However we are limited by the non-commutativity of matrix
+  product and we might not be able to group all =k= dependent terms
+  together to put them in the most external loop.
+- The right-hand part can also be computed at once for all =m= of a
+  given =k= and [x,y,z]. Thus for a given voxel and cluster this part
+  can be computed for all the MRI parameter dimensions stored in
+  temporary variable and used to compute the
+  =freedom_degree_intensity_posterior=. 
+- =obs[x][y][z] - mean[k]= is a simple vector addition, if obs is a
+  vector of k's, vectorization by the compiler is possible (if K known at
+  compile time).
+#+BEGIN_SRC ruby
+  real temp1[obs_dimension][obs_dimension]
+  real temp2[obs_dimension][obs_dimension]
+  real error[obs_dimension] 
+  for k in [0..nb_clusters-1]
+    temp1 = eigen_value[k] * transpose(eigen_vector[k])
+    for x in [0..X-1]
+      for y in [0..Y-1]
+        for z in [0..Z-1]
+          error = obs[x][y][z] - mean[k]
+          temp2 = temp1 * (error) * transpose(error) * eigen_vector[k]
+          for m in [0..obs_dimension-1]
+            freedom_degree_intensity_posterior[m][k][x][y][z] = delta[k][m] + 1/2 * temp2[m][m]
+          end
+        end
+      end
+    end
+  end
+#+END_SRC
+****** DONE Kernel characteristics [5/5]
+- [X] Complexity: k \times (temp1 + xyz \times (temp2 + error) + xyzm \times
+  freedom_degree_intensity_posterior) = $k2m^{3}(p + a + 3l + s) kxyzm^{2}(7l +
+  2p + 2a + 3s) + kxyzm^{2}(3l + 2s + a)$
+
+- [X] temp1: $m^{3}(p + a + 3l + s) + m^{2}(l + s)$
+  - 1 matrix multiply
+  - 1 matrix transpose
+
+- [X] =error=: $m(2l + s + a)$
+  - 1 vector add 
+    
+- [X] temp2: $m^{3}(p + a + 3l + s) + 2m²(3l + p + a + s) + m(l + s)$
+  - 1 matrix vector multiply
+  - 1 vector transposed vector multiply
+  - 1 vector transpose
+  - 1 matrix multiply
+
+- [X] freedom_degree_intensity_posterior: s + 2l + a + p
+**** External field
+***** Naive algo
+#+BEGIN_SRC ruby
+  for x in [0..X-1]
+    for y in [0..Y-1]
+      for z in [0..Z-1]
+        for k in [0..nb_clusters-1]
+          acc = 0
+          for m in [0..obs_dimension-1]
+            acc += ln(a[k][m]) + gamma[k][m] * ln(delta[k][m]) - ln(gamma(gamma[k][m])) - gamma_p[k][m] * ln(delta_p[k][x][y][z][m]) + ln(gamma(gamma_p[k][m]))
+          end
+          alpha_p[x][y][z][k] = transpose(labels[x][y][z]) * alpha + acc
+        end
+      end
+    end
+  end
+#+END_SRC
+
+****** TODO Kernel characteristics [1/3]
+- [ ] Complexity: $xyzk(m \times acc + alpha_p)$
+- [ ] =acc=:
+  - 5 ln
+  - 2 gamma
+  - 5 adds
+  - 2 mults
+  - 1 store
+  - 8 loads
+- [X] =alpha_p=: $m(4l + 2s + a + p) + a + s + l$
+  - 1 transposed vector vector multiply \to $m(3l + s + a + p)$
+  - 1 vector transpose
+  - 1 add
+  - 1 store
+  - 1 load
+***** V2
+In the first algo, we see when computing acc that there are some terms
+that depend only on =k= and =m=. That is, part of the computation can be k
+x m times instead of  k x n x m by computing these term in a loop on =k=
+and =m=. =n= being big, the gain should be non-negligible.  
+#+BEGIN_SRC ruby
+  for k in [0..nb_clusters-1]
+    acc1 = 0
+    for m in [0..obs_dimension-1]
+      acc1 += ln(a[k][m]) + gamma[k][m] * ln(delta[k][m]) - ln(gamma(gamma[k][m]))  + ln(gamma(gamma_p[k][m]))
+    end 
+    for x in [0..X-1]
+      for y in [0..Y-1]
+        for z in [0..Z-1]
+          
+          acc2 = 0
+          for m in [0..obs_dimension-1]
+            acc2 += gamma_p[k][m] * ln(delta_p[k][x][y][z][m])
+          end
+          alpha_p[x][y][z][k] = transpose(labels[x][y][z]) * alpha + acc1 - acc2
+        end
+      end
+    end
+  end
+#+END_SRC
+
+- By put the loop on the clusters, we are able to 
+
+- Is the compiler able to find a better transformation?
+****** TODO Kernel characteristics [1/4]
+- [ ] Complexity: $k \times (m \times acc1 + xyzm \times acc2 + xyz \times alpha_p)$
+
+- [ ] =acc1=:
+  - 4 ln
+  - 2 gamma
+  - 6 loads
+  - 1 store
+  - 3 adds
+  - 1 mult
+- [ ] =acc2=:
+  - 1 ln
+  - 3 loads
+  - 1 add
+  - 1 mult
+  - 1 store
+- [X] =alpha_p=: $m(4l + 2s + a + p) + 2a + 2l + s$
+  - 1 store
+  - transpose
+  - transposed vector vector multiply
+  - 2 adds
+  - 2 loads
+*** TODO q_z [0/2]
+- [ ] Add Borders
+**** TODO Borders
+**** TODO Center
+#+BEGIN_SRC ruby
+  for x in [0..X-1]
+    for y in [0..Y-1]
+      for z in [0..Z-1]
+        for k in [0..nb_clusters-1]
+          neighbours1 = 0
+          
+          for n in neighourhood(x,y,z) 
+            neighbors1 += n[k]
+          end
+
+          for k1 in nb_clusters
+            W = 0
+            neighbours2 = 0
+            for n in neighourhood(x,y,z) 
+              neighbours2 += n[k1]
+            end 
+            W += exp(alpha_p[x][y][z][k1] + beta / 2 * neighbours2)
+          end
+          
+          q_z[x][y][z][k] = exp(alpha_p[x][y][z][k] + beta / 2 * neighbours1) / W
+        end
+      end
+    end
+  end
+#+END_SRC
+There are spatial dependencies between voxels but there are no
+dependencies between K's. K's can be easily parallelized and could be
+vectorized if k's are contiguous in memory. However if the number of
+clusters is not known at compile time vectorization will not be done by
+the compiler. 
+
+**** Kernel characteristics
+- [ ] Complexity: $xyzkn \times neighbours1 + xyzk^{2}(n \times neighbours2 + W) +
+  xyzk \times q_z$
+- [ ] =neighbours1=:
+- [ ] =neighbours2=:
+- [ ] W:
+- [ ] q_z:
 * TODO Implementation details
 ** TODO Manipulated data structures
 ** TODO Used Libraries
