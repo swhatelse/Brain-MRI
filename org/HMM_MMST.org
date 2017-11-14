@@ -252,7 +252,7 @@ $\tilde{\delta}_{knm} = \delta_{km} + \frac{1}{2} [ A_{k}^{(r)} D_{k}^{(r)}^{t} 
 
 $\tilde{\gamma}_{km} = \gamma_{km} + \frac{1}{2}$
 
-\[\tilde{\alpha}_{z_{nk}} = \alpha_{zn}^{(r)} + \sum_{m=1}^{M} [ \ln(a_{km}^{(r)}) + \gamma_{km} \ln(\delta_{km}) -
+\[\tilde{\alpha}_{z_{n}k} = \alpha_{z_{n}}^{(r)} + \sum_{m=1}^{M} [ \ln(a_{km}^{(r)}) + \gamma_{km} \ln(\delta_{km}) -
              ln \Gamma(\gamma_{km}) - \tilde{\gamma}_{km} \ln(\tilde{\delta}_{knm}) + \ln \Gamma(\tilde{\gamma}_{km})]\]
 *** DONE E step - Update z
 **** Equation
