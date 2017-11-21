@@ -92,10 +92,303 @@
      y-axis. When moving to human MRI 3D neighbourhood will be necessary.
 ** 2017-11-13
 *** TODO Meeting
-**** TODO Algorithms
-**** TODO Code organization
+**** DONE Algorithms
+     Release a first implementation to see how it performs with
+     possible code optimization and then we can think about maybe
+     modifying the EM algorithm itself maybe with some approximations,
+     etc...
+**** DONE Code organization
+     Use as a basis the Bayesian version, but without the bayesian part
+     and include the HMM part to have quickly a version to test.
+     Once implemented we will see if we include this to SpaceM^3 or to
+     Stephane Despréaux package.
 **** TODO Git repo organization
-     - [ ] A git based work-flow https://hal.inria.fr/hal-01112795/file/SIGOPS_paper.pdf
+     - [ ] A git based work-flow
+       https://hal.inria.fr/hal-01112795/file/SIGOPS_paper.pdf
+** 2017-11-16
+*** R call C/C++                                                        :R:C:
+**** Dplyr example
+     Dplyr use c++ so I just took it as an example just to check the compiler directives (include paths, etc...):
+     #+begin_src R :results output :session :exports both
+     install.packages("dplyr")
+     #+end_src
+
+     #+RESULTS:
+     #+begin_example
+     Installation du package dans ‘/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4’
+     (car ‘lib’ n'est pas spécifié)
+     essai de l'URL 'https://pbil.univ-lyon1.fr/CRAN/src/contrib/dplyr_0.7.4.tar.gz'
+     Content type 'application/x-gzip' length 808054 bytes (789 KB)
+     ==================================================
+     downloaded 789 KB
+
+     * installing *source* package ‘dplyr’ ...
+     ** package ‘dplyr’ correctement décompressé et sommes MD5 vérifiées
+     ** libs
+     g++  -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c RcppExports.cpp -o RcppExports.o
+     g++  -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c address.cpp -o address.o
+     g++  -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c api.cpp -o api.o
+     g++  -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c arrange.cpp -o arrange.o
+     g++  -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c between.cpp -o between.o
+     g++  -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c bind.cpp -o bind.o
+     g++  -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c combine_variables.cpp -o combine_variables.o
+     g++  -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c distinct.cpp -o distinct.o
+     g++  -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c encoding.cpp -o encoding.o
+     g++  -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c filter.cpp -o filter.o
+     g++  -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c group_by.cpp -o group_by.o
+     g++  -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c group_indices.cpp -o group_indices.o
+     g++  -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c hybrid.cpp -o hybrid.o
+     g++  -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c hybrid_count.cpp -o hybrid_count.o
+     g++  -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c hybrid_debug.cpp -o hybrid_debug.o
+     g++  -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c hybrid_in.cpp -o hybrid_in.o
+     g++  -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c hybrid_minmax.cpp -o hybrid_minmax.o
+     g++  -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c hybrid_nth.cpp -o hybrid_nth.o
+     g++  -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c hybrid_offset.cpp -o hybrid_offset.o
+     g++  -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c hybrid_simple.cpp -o hybrid_simple.o
+     g++  -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c hybrid_window.cpp -o hybrid_window.o
+     g++  -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c init.cpp -o init.o
+     g++  -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c join.cpp -o join.o
+     g++  -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c join_exports.cpp -o join_exports.o
+     g++  -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c mutate.cpp -o mutate.o
+     gcc -std=gnu99 -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c rlang-export.c -o rlang-export.o
+     g++  -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c select.cpp -o select.o
+     g++  -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c set.cpp -o set.o
+     g++  -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c slice.cpp -o slice.o
+     g++  -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c summarise.cpp -o summarise.o
+     g++  -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c test.cpp -o test.o
+     g++  -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c utils.cpp -o utils.o
+     g++  -I/usr/share/R/include -DNDEBUG -I../inst/include -DCOMPILING_DPLYR -DBOOST_NO_INT64_T -DBOOST_NO_INTEGRAL_INT64_T -DBOOST_NO_LONG_LONG -DRCPP_USING_UTF8_ERROR_STRING -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/BH/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/bindrcpp/include" -I"/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/plogr/include"    -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c window.cpp -o window.o
+     g++ -shared -L/usr/lib/R/lib -Wl,-Bsymbolic-functions -Wl,-z,relro -o dplyr.so RcppExports.o address.o api.o arrange.o between.o bind.o combine_variables.o distinct.o encoding.o filter.o group_by.o group_indices.o hybrid.o hybrid_count.o hybrid_debug.o hybrid_in.o hybrid_minmax.o hybrid_nth.o hybrid_offset.o hybrid_simple.o hybrid_window.o init.o join.o join_exports.o mutate.o rlang-export.o select.o set.o slice.o summarise.o test.o utils.o window.o -L/usr/lib/R/lib -lR
+     installing to /home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/dplyr/libs
+     ** R
+     ** data
+     *** moving datasets to lazyload DB
+     ** inst
+     ** preparing package for lazy loading
+     ** help
+     *** installing help indices
+     *** copying figures
+     ** building package indices
+     ** installing vignettes
+     ** testing if installed package can be loaded
+     * DONE (dplyr)
+
+     Les packages source téléchargés sont dans
+             ‘/tmp/Rtmp1i7F52/downloaded_packages’
+#+end_example
+**** C source
+***** Main
+     #+BEGIN_SRC c :tangle ../../../other/R/C/src/core/main.c
+       #include<stdio.h>
+       #include<stdlib.h>
+
+       #include"vectorAdd.h"
+
+       #define LENGTH 8
+
+       int main(int argc, char** argv){
+           int a[LENGTH] = {1,2,3,4,5,6,7,8};
+           int b[LENGTH] = {1,2,3,4,5,6,7,8};
+
+           int c[LENGTH] = {0,0,0,0,0,0,0,0};
+
+           vectorAdd(a,b,c,LENGTH);
+
+           for(int i = 0; i < LENGTH; i++){
+               printf("%d ", c[i]);
+           }
+           
+           printf("\n");
+           
+           return EXIT_SUCCESS;
+       }
+     #+END_SRC
+***** Header 
+     #+BEGIN_SRC c :tangle ../../../other/R/C/src/core/vectorAdd.h
+       void vectorAdd(const int* a, const int *b, int *c, const int length);
+     #+END_SRC
+***** function
+     #+BEGIN_SRC c :tangle ../../../other/R/C/src/core/vectorAdd.cpp
+       #include"vectorAdd.h"
+
+       void vectorAdd(const int* a, const int *b, int *c, const int length){
+           for(int i = 0; i < length; i++){
+               c[i] = a[i] + b[i];
+           }
+       }
+     #+END_SRC
+***** Makefile
+     #+BEGIN_SRC makefile :tangle ../../../other/R/C/src/core/Makefile
+       CC=g++
+       CFLAGS=-O3
+       # INCLUDES=-I/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include -I/usr/share/R/include/
+       INCLUDES=
+       LIBS=-L/usr/lib/R/lib -lR
+
+       vectorAdd.o: vectorAdd.cpp
+       $(CC) $(CFLAGS) $(INCLUDES) -fPIC -c $^
+
+       libvectoradd.so: vectorAdd.o
+       $(CC) $(CFLAGS) -shared -o $@ $^ $(LIBS)
+
+       main: main.c
+       $(CC) $(CFLAGS) -o $@ $^ -L. -lvectoradd
+
+       all: vectorAdd.o libvectoradd.so main
+
+       clean:
+       rm -f vectorAdd.o libvectoradd.so main
+
+     #+END_SRC
+***** Compile and run
+      #+begin_src sh :results output :exports both
+        cd ../../../other/R/C/src/core/
+        make all
+        export LD_LIBRARY_PATH=$PWD:$LD_LIBRARY_PATH
+        ./main
+      #+end_src
+**** C wrapper
+***** Manual
+      Not sure R data structures stores elements are stored
+      contiguously in memory and because I don't want to rely and R
+      type, in the following example I use vector as a intermediary
+      type to convert R variable type to C arrays. It is a little ugly
+      maybe there exist a better way. Maybe using armadillo type could
+      be the way to do...
+      #+BEGIN_SRC c :tangle ../../../other/R/C/src/r_wrapper/wrapper.cpp
+        // Extension to convert std::vector to SEXP
+//        #include<RcppCommon.h>
+//        namespace Rcpp{
+//            namespace traits{
+//                template <typename T> SEXP wrap(const std::vector<T> & obj);
+//            }
+//        }
+
+        #include<Rcpp.h>
+//        namespace Rcpp{
+//            namespace traits{
+//                template <typename T> SEXP wrap(const std::vector<T> & obj){
+//                    const int RTYPE = Rcpp::traits::r_sexptype_traits<T>::rtype ;                    
+//                    return Rcpp::Vector< RTYPE >(obj.begin(), obj.end());
+//                };                
+//            }
+//        }
+      
+      #+END_SRC
+
+      #+BEGIN_SRC c :tangle ../../../other/R/C/src/r_wrapper/wrapper.cpp
+              
+        #include<vector>
+        #include"../core/vectorAdd.h"
+
+        using namespace Rcpp;
+
+        extern "C" SEXP addVectorWrapper(SEXP a, SEXP b, SEXP c, SEXP length){
+            std::vector<int> a_ = Rcpp::as< std::vector<int> > (a);
+            std::vector<int> b_ = Rcpp::as< std::vector<int> > (b);
+            std::vector<int> c_ = Rcpp::as< std::vector<int> > (c);
+            Rcpp::traits::input_parameter< int >::type length_(length);
+
+            int* _a = &a_[0];
+            int* _b = &b_[0];
+            int* _c = &c_[0];
+            std::vector<int> foo;
+            vectorAdd(_a, _b, _c, length_);
+            return Rcpp::wrap(c_);            
+            // return R_NilValue;
+        }
+      #+END_SRC
+***** Automatic
+**** C shared library for R
+     #+begin_src sh :results output :exports both
+       cd /home/mistis/squinito/Dev/other/R/C/src/r_wrapper
+       PKG_CPPFLAGS="-I/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" \
+       PKG_LIBS="-L/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp" \
+       R CMD SHLIB ../core/vectorAdd.cpp wrapper.cpp
+     #+end_src
+
+**** R calling C
+     #+begin_src R :results output :session :exports both
+       library("Rcpp")
+       setwd("/home/mistis/squinito/Dev/other/R/C/src/core")
+       a = matrix(c(1,2,3,4),nrow=4,ncol=1)
+       b = matrix(c(1,2,3,4),nrow=4,ncol=1)
+       c = matrix(c(0,0,0,0),nrow=4,ncol=1)
+       x <- dyn.load("vectorAdd.so")
+       .Call("addVectorWrapper", a, b, c, 4)
+       c
+     #+end_src
+
+     #+RESULTS:
+     : 2
+     : [1] 2 4 6 8
+     :      [,1]
+     : [1,]    0
+     : [2,]    0
+     : [3,]    0
+     : [4,]    0
+
+
+**** Rcpp
+     - To crate a package using the specified c/c++ source files:
+       #+begin_src R :results output :session :exports both
+         Rcpp.package.skeleton(example_code=FALSE, cpp_files=c("src/vectorAdd.c", "src/vectorAdd.h"))
+       #+end_src
+       The package is create in different directory that the on
+       specified. It is silly because it copies files instead of just
+       turning the specified directory into a package.
+
+     - Add c/c++ file references to RccExports.{R/cpp}
+       #+begin_src R :results output :session :exports both
+         compileAttributes(pkgdir="anRpackage/")
+       #+end_src
+**** Guideline
+     - Never use abort or exit or any stuff that can call them because
+       they kill the R process.
+** 2017-11-20
+    #+BEGIN_SRC ruby
+      h = 256
+      w = 256
+      n_h = 1
+      n_w = 1
+
+      # Naive approach
+      naive = 0
+
+      # Borders
+      sum = 0
+      (0...(w - 2 * n_w)).each do
+        (0...(n_h)).each do |j|
+          sum += (2 * n_w + 1) * (n_h + 1 + j) - 2
+        end
+      end
+
+      naive += 4 * sum
+
+      # Corners
+      sum = 0
+      (0...(n_w)).each do |i|
+        (0...(n_h)).each do |j|
+          sum += (n_w + 1 + i) * (n_h + 1 + j) - 2
+        end
+      end
+
+      naive += 4 * sum
+
+      naive += (w - 2 * n_w) * (h - 2 * n_h) * ((2 * n_h + 1) * (2 * n_w + 1) - 2)
+
+      # Virtual border approach
+      virt = h * w * ((2 * n_h + 1) * (2 * n_w + 1) - 2)
+      virt
+
+      virt.to_f / naive.to_f
+   #+END_SRC
+
+    #+RESULTS:
+    : 1.0067327358432598
+
+   Small computation overhead \to less than 1% more 
+
 * Emacs Setup 							   :noexport:
   This document has local variables in its postembule, which should
   allow Org-mode to work seamlessly without any setup. If you're
