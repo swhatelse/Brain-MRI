@@ -20,6 +20,12 @@
   - [ ] Optimization [0/1]
     - [ ] Is BOAST suited? Can we mix it with StarPU?
   - [ ] Centralize Alexis's code and repo?
+  - [ ] Ask Jaime about pyHRF
+  - [ ] Move =HMM_MMST.org= to Alexis's Gibbs project.
+  - [-] Structure the repository using subrepo / submodule.
+    - [X] Move repos outside the repo where the journal is
+    - [ ] Use submodule
+  - [ ] C++ code as .so
 * Tips
 
 ** Org mode
