@@ -1,10 +1,10 @@
-#+TAGS: noexport(n) software(s) Alexis(a) Florence(f) deprecated(d) EM(e) HMM(h) MMST(m)
+#+TAGS: noexport(n) software(s) Alexis(a) Florence(f) deprecated(d) EM(e) HMM(h) MMST(m) R(r) C(c)
 
 #+Title: Journal
 #+AUTHOR:      Steven QUINITO MASNADA
 #+BABEL: :tangle yes :noweb yes
 
-* TODO Objectives [0/7]
+* TODO Objectives [0/10]
   - [ ] Create R package from Stephane Despreaux source code
   - [ ] Implement Markov field approach
   - [ ] Discuss best practices with Jaime
@@ -26,8 +26,19 @@
     - [X] Move repos outside the repo where the journal is
     - [ ] Use submodule
   - [ ] C++ code as .so
-* Tips
+* Repository
+  #+begin_src sh :results output :exports both
+    # Gibbs MMST
+    git clone https://stevenqm@scm.gforge.inria.fr/authscm/stevenqm/git/mmsdarticle/mmsdarticle.git
+    git clone https://stevenqm@scm.gforge.inria.fr/authscm/stevenqm/git/mmsdarticle/article.git
+    git clone https://stevenqm@scm.gforge.inria.fr/authscm/stevenqm/git/mmsdarticle/code.git
 
+    git clone https://gitlab.inria.fr/arnaud/MMST_with_Markov_Random_Field.git
+
+    git svn clone --username stevenqm https://scm.gforge.inria.fr/authscm/stevenqm/svn/ginria/ -s
+    git svn clone --username stevenqm https://scm.gforge.inria.fr/authscm/stevenqm/svn/spacem3/ -s 
+  #+end_src
+* Tips
 ** Org mode
    - To format a text to fit 80 charac / line \to fill-paragraph or fill-region
 * September
