@@ -246,7 +246,7 @@ $\gamma_{km}$: degree of freedom shape of the $m^{th}$ normal in the $k^{th}$
 cluster.
 
 $a_{km}$: $m^{th}$ diagonal element of $A_{k}$
-
+**** Posterior parameters
 $\tilde{\delta}_{knm} = \delta_{km} + \frac{1}{2} [ A_{k}^{(r)} D_{k}^{(r)}^{t} (y_{n} - \mu_{k}^{(r)}) (y_{n} - \mu_{k}^{(r)})^{t}
           D_{k}^{(r)} ]_{mm}$
 
