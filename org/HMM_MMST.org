@@ -393,6 +393,7 @@ Let assume a column major structure of arrays.
   int obs_dimension
   real obs[obs_dimension][X][Y][Z] # observations vectors should be an effective implementation to take advantage of vector operation
   boolean labels[nb_clusters][X][Y][Z]
+  int neighbourhood_size # Assuming a cubic neighbourhood
 
   # Random variables
   real q_z[X][Y][Z][nb_clusters]
@@ -411,7 +412,7 @@ Let assume a column major structure of arrays.
   real gamma_p[nb_clusters][obs_dimension]
   real alpha_p[X][Y][Z][nb_clusters]
 
-  real a[obs_dimension] # A as a vector
+  real a[obs_dimension] # The orthogonal matrix A as a vector
 #+END_EXAMPLE
 
 ** TODO Algorithms [0/1]
