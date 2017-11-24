@@ -362,6 +362,110 @@
 **** Guideline
      - Never use abort or exit or any stuff that can call them because
        they kill the R process.
+**** Expose classes
+     #+BEGIN_SRC c++ :tangle ../../../other/R/C/expose_class/src/A.hpp
+       #ifndef A_HPP
+       #define A_HPP
+       #include<Rcpp.h>
+
+       using namespace Rcpp;
+
+       class A{
+       public:
+           int x;
+
+           A(int x);
+           int foo();
+       };      
+       #endif
+     #+END_SRC
+
+     #+BEGIN_SRC c++ :tangle ../../../other/R/C/expose_class/src/A.cpp
+       #include"A.hpp"
+
+       A::A(int x): x(x) {}
+       int A::foo(){ return x * x; }
+     #+END_SRC
+
+     #+BEGIN_SRC c++ :tangle ../../../other/R/C/expose_class/src/B.hpp
+       #ifndef B_HPP
+       #define B_HPP
+
+       #include<Rcpp.h>
+       #include"A.hpp"
+
+       using namespace Rcpp;
+
+       class B{
+       public:
+           A a;
+           B(int x);
+       };
+
+       #endif
+     #+END_SRC
+
+     #+BEGIN_SRC c++ :tangle ../../../other/R/C/expose_class/src/B.cpp
+       #include"B.hpp"
+
+       B::B(int x): a(x){ } 
+     #+END_SRC
+
+     #+BEGIN_SRC c++ :tangle ../../../other/R/C/expose_class/src/RcppWrapper.cpp
+       #include"A.hpp"
+       #include"B.hpp"
+       RCPP_EXPOSED_CLASS(A);
+       RCPP_EXPOSED_CLASS(B);
+       RCPP_MODULE(mod) {
+           class_<A>( "A" )
+               // Constructors :
+               // .constructor( "default" )
+               .constructor< int >( "sets x" )
+               // Fields :
+               .field( "x", &A::x, "Value of x")
+               
+               // Methods :
+               .method( "foo", &A::foo, "access of the private field 'clusters'")
+               ;
+           class_<B>( "B" )
+               // Constructors :
+               // .constructor( "default" )
+               .constructor< int >( "sets a" )
+               // Fields :
+               .field( "a", &B::a, "Value of a")
+               
+               // Methods :
+               ;
+       }      
+     #+END_SRC
+
+     #+begin_src sh :results output :exports both
+       cd /home/mistis/squinito/Dev/other/R/C/expose_class/src
+       PKG_CPPFLAGS="-I/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" \
+       PKG_LIBS="-L/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp" \
+       R CMD SHLIB A.cpp B.cpp RcppWrapper.cpp -o libtest.so
+     #+end_src
+
+     #+RESULTS:
+     : g++ -shared -L/usr/lib/R/lib -Wl,-Bsymbolic-functions -Wl,-z,relro -o libtest.so A.o B.o RcppWrapper.o -L/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/usr/lib/R/lib -lR
+
+     #+begin_src R :results output :session :exports both
+       library(Rcpp)
+       setwd("/home/mistis/squinito/Dev/other/R/C/expose_class/src/")
+       lib <- dyn.load("A.so")
+       mymodule <- Rcpp::Module("mod",lib)
+
+       B <- mymodule$B
+       b <- new( B, 4 )
+       a <- b$a
+       a$x
+       a$foo()
+     #+end_src
+
+     #+RESULTS:
+     : [1] 4
+     : [1] 16
+
 ** 2017-11-20
    How much more computation will we do if we add borders with virtual
    voxels to avoid if conditions?
