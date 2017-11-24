@@ -363,13 +363,15 @@
      - Never use abort or exit or any stuff that can call them because
        they kill the R process.
 ** 2017-11-20
+   How much more computation will we do if we add borders with virtual
+   voxels to avoid if conditions?
     #+BEGIN_SRC ruby
       h = 256
       w = 256
       n_h = 1
       n_w = 1
 
-      # Naive approach
+      ######### Naive approach #########
       naive = 0
 
       # Borders
@@ -394,7 +396,7 @@
 
       naive += (w - 2 * n_w) * (h - 2 * n_h) * ((2 * n_h + 1) * (2 * n_w + 1) - 2)
 
-      # Virtual border approach
+      ######### Virtual border approach #########
       virt = h * w * ((2 * n_h + 1) * (2 * n_w + 1) - 2)
       virt
 
