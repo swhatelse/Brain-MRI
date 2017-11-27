@@ -1,4 +1,4 @@
-#+TAGS: noexport(n) EM(e) HMRF(h)
+#+TAGS: noexport(n) EM(e) HMRF(h) MMST(m)
 #+LANGUAGE: en
 
 #+Title: Notes
@@ -10,26 +10,33 @@
 
 * Mathematical notions
 ** Basic Probabilities
+*** Conjugate distribution
+    It is the inverse conditioning e.g. p(x|\theta) \to p(\theta|x)
+    p(Y,Z|\theta) = p(Y|Z,\theta) . *p(Z|\theta)*   prior
+                                     | 
+                                 Conjugate
+                                     |
+                p(Y|\theta) . *p(Z|Y,\theta)* posterior
+
+    The posterior is the same family of the prior.
+**** DONE Questions [1/1]
+    - [X] Is the Dirichlet distribution the conjugate prior of the Gibbs
+      distribution? No because the prior and the posterior follow the
+      same distribution.
+*** Coefficient regularization
+    See Shrinkage methods, weight decay.
+
+    Prevent coefficient from having to big values to reduce
+    over-fitting \to penalty on weight values.
 *** Joint probabilities
     $ p(X,Z) = p(X|Z) p(Z) = p(Z|X) p(X) $
-** Kullback-Leibler divergence
-   Divergence measure between two distributions.
-** Mixture models
-  Example:
-  #+begin_src R :results output graphics :file (org-babel-temp-file "figure" ".png") :exports both :width 600 :height 400 :session
-    f1 <- function(x) dnorm(x, mean = 1, sd = 1) * 0.4
-    f2 <- function(x) dnorm(x, mean = 10, sd = 3) * 0.4
-    f3 <- function(x) dnorm(x, mean = 4, sd = 0.5) * 0.2
-
-    plot(function(x) f1(x) + f2(x) + f3(x), -10, 20)
-    curve(f1, add=TRUE, col = "red", lty = 2 )
-    curve(f2, add=TRUE, col = "blue", lty=2)
-    curve(f3, add=TRUE, col = "green", lty = 2 )
-  #+end_src
-
-  #+RESULTS:
-  [[file:/tmp/babel-4587BL1/figure4587kQd.png]]
-** Multiple Scale T-distribution
+*** Likelihood
+    The observations given the parameters:
+    p(X|\theta)
+*** Posterior distribution
+    The parameters given the evidences:
+    p(\theta|X)
+    
 ** Bayesian
 *** Maximum Likelihood
     Let : 
@@ -44,31 +51,32 @@
     It is the inverse conditioning of the posterior e.g. in the case
     of sequential data p(x^t | x^{t-1}) \to p(x^{t-1} | x^t). It is more
     generally speaking the right-hand side of the posterior
-    condition. In p(y,x) = p(y|x)p(x) p(x) is the prior. It is the
-    occurrence of the right-hand side of the conditional.
+    condition. In $p(y,x) = p(y|x)p(x)$ p(x) is the prior. It is the
+    probability distribution of the right-hand side of the conditional.
 
     In bayesian the parameters are considered as random variables, so
-    the prior is the parameter distributions. 
+    *the prior is the parameter distributions*. 
 
     The prior can be non-informatif \to posterior independant of the
     prior. Or it can be informatif \to posterior dependant of the
     prior.
-
-** Markov Random Field
-   It is used to traduce some dependencies c.f. Markov property.
-
-** Hidden Markov Random Field                                          :HMRF:
+**** Questions
+     - [ ] Is it the probability distribution of the parameters?
+*** Uncertainty on the parameters
+    Parameters are considered as a random variable.
 ** EM algorithm                                                          :EM:
    Let X be the set of observations and Z the latent variables.
    Let \theta be the parameters of the models.
 
+   The purpose of EM is to maximize the complete log likelihood.
    Complete log likelihood = $ ln p(X,Z|\theta) $
-   However Z is not known and we only have the incomplete log likelihood = $
-   ln p(X|\theta) $. Thus we need to estimate the complete log likelihood.
+
+   However Z is not known and we only have the incomplete log
+   likelihood = $ ln p(X|\theta) $. Thus we need to estimate the complete
+   log likelihood. 
    $ ln p(X,Z|\theta) = ln p(Z|X,\theta) p(X|\theta) $
-   We do this given the evidences and the only information we have
-   about Z which are inferred by the observations, the posterior
-   probabilities. 
+   The estimation is based on the inference we can do about Z from the
+   observations X, which is the posterior probabilities.
 
    $ ln p(X|\theta) = ln {\sum_{z} p(X,Z|\theta)} $
 
@@ -85,10 +93,55 @@
     - Then the posterior distribution allows us to compute the expected
       complete likelihood:
       $ Q(\theta,\theta^{old}) = \sum_{Z} p(Z|X,\theta^{old}^{}_{}) ln p(X,Z|\theta) $
+
+    - Sometime the posterior cannot be computed and need to be
+      approximated with a distribution $ q(Z) $. 
 *** Maximization Step
      Maximize expected log likelihood (using the posterior) $Q(\theta,\theta^{old})$ by
      estimating means, covariances, mixing parameters, etc...
-     
+
+*** Bayesian approach
+    Parameters are considered as random variables.
+
+** Hidden Markov Random Field                                          :HMRF:
+   Intractable because of \alpha and \beta \to need approximation
+
+*** A hierarchical model
+    # Not in the right place, need to be moved to a part dealing with
+    # HMM and MMST
+    - Z \to Gibbs distribution
+    - W | Z \to Gamma distribution
+    - Y | W, Z \to Gaussian distribution
+    - Y \to MMST
+    - Y | Z \to MST
+** Kullback-Leibler divergence
+   Divergence measure between two distributions.
+** Linear algebra
+*** Esperance of a matrix
+    It is the esperance of each elements.
+*** Precision/concentration matrix
+    It is the inverse of the covariance matrix.
+** Markov Random Field
+   It is used to traduce some dependencies c.f. Markov property.
+** Mixture models
+  Example:
+  #+begin_src R :results output graphics :file (org-babel-temp-file "figure" ".png") :exports both :width 600 :height 400 :session
+    f1 <- function(x) dnorm(x, mean = 1, sd = 1) * 0.4
+    f2 <- function(x) dnorm(x, mean = 10, sd = 3) * 0.4
+    f3 <- function(x) dnorm(x, mean = 4, sd = 0.5) * 0.2
+
+    plot(function(x) f1(x) + f2(x) + f3(x), -10, 20)
+    curve(f1, add=TRUE, col = "red", lty = 2 )
+    curve(f2, add=TRUE, col = "blue", lty=2)
+    curve(f3, add=TRUE, col = "green", lty = 2 )
+  #+end_src
+
+  #+RESULTS:
+  [[file:/tmp/babel-4466iEw/figure4466Uly.png]]
+** Multiple Scale T-distribution
+   A MST is an infinite mixture of Gaussian associated with a gamma
+   distribution.
+   $t_{M} = \int_{0}^{\infty} \mathcal{N}_{M} (y,\mu,\Sigma/w) \mathcal{G}(w;\nu/2,\nu/2)dw $
 ** VEM for HMRF                                                     :EM:HMRF:
 *** Energy example principle
 **** Neighbors interactions
@@ -116,6 +169,11 @@
    : [2,]    0
    : [3,]    0
 
+*** Mean field approximation
+    Used to approximate the distribution of a MRF
+
+* Programming
+** How to reduce cache miss on big multi-dimensional arrays?
 * Emacs Setup 							   :noexport:
   This document has local variables in its postembule, which should
   allow Org-mode to work seamlessly without any setup. If you're
