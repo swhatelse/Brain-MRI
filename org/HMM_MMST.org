@@ -92,6 +92,10 @@
 \setbeamertemplate{caption}{\raggedright\insertcaption\par}
 #+END_LaTeX
 
+*Warning*: _This version of the document is deprecated. The current_
+_version is on Alexis's repo._
+
+
 * Objective of this document
 *** Objective of this document
 - *Gather information* to implement HMRF based clustering
