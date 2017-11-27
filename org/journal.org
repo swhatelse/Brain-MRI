@@ -4,11 +4,10 @@
 #+AUTHOR:      Steven QUINITO MASNADA
 #+BABEL: :tangle yes :noweb yes
 
-* TODO Objectives [0/10]
+* TODO Objectives [3/12]
   - [ ] Create R package from Stephane Despreaux source code
   - [ ] Implement Markov field approach
   - [ ] Discuss best practices with Jaime
-  - [ ] Try to install SpaceM^3 to see if it is still compatible
   - [ ] Parallelization [0/5]
     - [ ] Find literature about Markov fields computation
       parallelization
@@ -21,11 +20,14 @@
     - [ ] Is BOAST suited? Can we mix it with StarPU?
   - [ ] Centralize Alexis's code and repo?
   - [ ] Ask Jaime about pyHRF
-  - [ ] Move =HMM_MMST.org= to Alexis's Gibbs project.
+  - [X] Move =HMM_MMST.org= to Alexis's Gibbs project.
   - [-] Structure the repository using subrepo / submodule.
     - [X] Move repos outside the repo where the journal is
     - [ ] Use submodule
-  - [ ] C++ code as .so
+  - [X] C++ code as .so
+    Using Rcpp to export and expose functions / classes to R.
+  - [X] Split c++ source
+  - [ ] Write test cases
 * Repository
   #+begin_src sh :results output :exports both
     # Gibbs MMST
