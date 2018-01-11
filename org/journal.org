@@ -670,6 +670,168 @@
 
    Small computation overhead \to less than 1% more 
 
+** 2017-11-30
+*** DONE Questions [9/9]
+    - [X] Why does =Gamma_Law= have an attribute mean? (rate / shape)
+      The gamma law describes the distribution of the weights knowing
+      the labels and there no mean used in the formulas. Where is it
+      usefull and why? 
+      It isn't a parameter of the gamma law it is just stored for
+      convenience because the expectation of the gamma law is needed.
+    - [X] In the computation of the gamma rate parameter of the
+      posterior, is gamma_rate not supposed to be a vector of size
+      NB_CLUSTERS? In the formula we \delta_km. Same questions
+      for ~\delta \to =NB_MRI_DIMENSION= \times =N=.
+      Separation by cluster \to for each cluster there is a vector of
+      size =NB_MRI_DIMENSION=
+    - [X] In =Gibbs_Law::update_outer_fields= why is the outer field set
+      to the mean of the probabilities? 
+      This way \alpha behaves like \pi like in the classical case. This gives
+      a the multinomial case.
+      Maybe using -log(mean)
+    - [X] In =Gamma_Law::log_density=: rate is only a vector \to why same
+      rate for each voxels and clusters?
+      Because it the general case (Gibbs) > < variational. In the
+      Gibbs distribution each voxels have the same rates and
+      parameters. As opposed to the variational case, where each
+      voxels have their own parameters and thus their own gamma law.
+    - [X] What does follow a multinomial distribution? 
+      P(Z) which is a Gibbs distribution is approximated by the
+      posterior of the classes (q(z_n)), a multinomial law . Each z_n
+      follow its own multinomial law.
+    - [X] In the Model class, clustering is the belonging to a class
+      for each voxels and depends to the probability distribution
+      P(Z). It is only initialized, in the Model constructor but never
+      updated. The update of the lower bound takes into account the
+      clustering in =Model::update_lower_bound=, as =clustering= is not
+      update the lower bound is based on the initial distribution
+      of Z. The update is missing right?
+      Yes it is missing the update of the =lower_bound= will be done at
+      the end of the M-Step.
+    - [X] Why is the =lower_bound= updated just after the E_step and not
+      the M step?  Because probabilities P(Z) have to be computed just
+      after approximating the Gibbs distribution without modifying the
+      parameters (index coherency).
+    - [X] What is the log density for a cluster? Is it not supposed to
+      be P(Z)?  It is an MST law.
+    - [X] In each iteration of EM, just after the variational
+      approximation, in =Model::update_lower_bound= the lower is updated
+      taken into account the =lower_bound= of the clusters the this one
+      is never updated. I guess this part is missing.
+      Yes it is.
+*** Call structure
+    - =Model::initialization=: Initialize Q_zn and the labels for each pixels.
+    - =Model::em=
+      - =Variational::update=
+        - =Gamma_Law::variational_update=: Compute posterior rate,
+          shape, mean, outer field, local field
+          - =Gamma_Law::variational_update_shape=: Compute \gamma for the posterior
+          - =Gamma_Law::variational_update_rate=: Compute \delta for the posterior
+          - =Gamma_Law::variational_update_mean=: Compute \mu for the posterior
+            Divide vs [pow mult]
+        - =Multinomial_Law::variational_update=:
+          - =Multinomial_Law::variational_update_probabilities=: Compute
+            the posterior of the labels (q_z)
+      - =Model::update_lower_bound= 
+        - =Gibbs_Law::log_density= 
+      - =Cluster::update_M_step= 
+        - =Gamma_Law::update=
+          - =Gamma_Law::update_shape=: Compute \gamma
+          - =Gamma_Law::update_mean=: Compute the expectation of the
+            distribution
+        - =Gaussian_Law::update=
+          - =Gaussian_Law::update_mean=: Compute \mu
+          - =Gaussian_Law::update_orthogonal=: Compute D
+            - =Armijo_C=
+            - =gradf_C=
+            - =RetractionQR_C=
+            - =objectFunction_C=
+            - =RetractionQR_C=
+          - =Gaussian_Law::update_diagonal=: Compute A
+      - =Gibbs_Law::update=
+        - =Gibbs_Law::update_outer_fields=
+        - =Gibbs_Law::update_local_fields=: Does not compute \beta for now
+* 2018
+** January
+*** 2018-01-09
+**** About the matrix shapes                                            :Bug:
+     There are some inconsistencies between the classical and
+     variational approach in the way data are stored into matrices,
+     causing some errors that force us to do some transpositions. For
+     example in variational the MRI dimension is stored in row but in
+     column in the classical approach. Or an other example with the
+     =rate= and the =shape= of the =Gamma_Law= class, shape \to vec \to [MRI x 1] vs
+     rate \to [OBSERVATIONS x MRI].
+***** Causing errors                                                    :Bug:
+      - =Gamma_Law::update_mean= : =Gamma::rate= has a shape [MRI x 1] in
+        the classical approach but has a shape [Observations x MRI] in
+        variational.
+        For now as generally everything is organized as [Observations
+        x ...] =Gamma::rate= should be like this [1 x MRI] and as a
+        consequence =Gamma::shape= should be a row vector.
+***** Where the matrix/vector shapes matters
+     - =Gamma_Law.cpp=
+       - =f_temp=
+         Doesn't care about the shape of =shape= but cares about =rate=
+       - =update_shape=
+         Doesn't care about the shape of =shape= but cares about =rate=
+       - =update_mean= 
+         Cares about the shape of =shape= and =rate=.
+         shape[1 x MRI] rate[Observations x MRI] or 
+         shape[MRI x 1] rate[MRI x Observations]
+       - =log_density=
+         Cares about the shape of =x=, =shape= and =rate=.
+         Solution \to Transpose shape or use a row vector, rate \to [1 x MRI] and
+         transpose x:
+         #+BEGIN_SRC c++
+           accu(shape % log(rate.row(0)) // classical : [MRI x 1] % [1 x 1] or variational : [MRI x 1] % [1 x MRI] -> [1 x MRI] % [1 x MRI]
+                - lgamma(shape)          // [MRI x 1]                                                              -> [1 x MRI]
+                + (shape - 1) % log(x)   // [MRI x 1] % [MRI x 1]                                                  -> [1 x MRI] % [1 x MRI]
+                - rate.row(0) % x);      // classical : [1 x 1] % [MRI x 1] or variational : [1 x MRI] % [MRI x 1] -> [1 x MRI] % [1 x MRI]
+         #+END_SRC
+         But for now we can ignore it.
+       - =variational_update_rate=
+         Doesn't care about the shape of =shape= but cares about rate.
+         Here there is nothing to do:
+         #+BEGIN_SRC c
+           rate.row( n ) = trans(gamma_rate + 0.5 *
+                                                   diagvec(
+                                                           diagmat( gaussian_diagonal ) *                       // [MRI x MRI]
+                                                           gaussian_orthogonal.t( ) *                           // [MRI x MRI]
+                                                           trans( data_values.row( n ) - gaussian_mean.t( ) ) * // [1 x MRI] - [1 x MRI] \to [MRI x 1]
+                                                           ( data_values.row( n ) - gaussian_mean.t( ) ) *      // [1 x MRI] - [1 x MRI] \to [1 x MRI]
+                                                           gaussian_orthogonal                                  // [MRI x MRI]
+                                                   )
+                           );
+         #+END_SRC
+       - =variational_update_mean=
+         Cares about the shape of =shape=, =rate= and mean.
+         Nothing to do.
+       - =variational_log_density=
+         Cares about the shape of =shape= and =rate=.
+         Nothing to do.
+         #+BEGIN_SRC c
+           double res += accu( 
+                              shape.t() % log(rate.row(n))      // [1 x MRI] % [1 x MRI]
+                              - lgamma(shape.t())               // [1 x MRI]
+                              + (shape.t() - 1) % log(x.row(n)) // [1 x MRI] % [1 x MRI] 
+                              - rate.row(n) % x.row(n)          // [1 x MRI] % [1 x MRI] 
+                             );
+         #+END_SRC
+     - =Variational.cpp=
+       - =update=
+         Cares about =shape= and =rate=.
+         Organizing =Gamma_Law::rate= as [MRI x 1] or converting =shape=
+         and =diagonal= to a row vector would resolve the problem.
+     - =Gaussian_Law.cpp=
+       - =update_orthogonal=
+         Cares about the shape of mean. It is transposed here but if
+         the =data_values= as a shape [MRI x observations] or mean is a
+         row vector we don't need to transpose it.
+       - =update_diagonal=
+         Same as orthogonal.
+
+     
 * Emacs Setup 							   :noexport:
   This document has local variables in its postembule, which should
   allow Org-mode to work seamlessly without any setup. If you're
