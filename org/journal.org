@@ -4,10 +4,9 @@
 #+AUTHOR:      Steven QUINITO MASNADA
 #+BABEL: :tangle yes :noweb yes
 
-* TODO Objectives [3/12]
+* TODO Objectives [1/9]
   - [ ] Create R package from Stephane Despreaux source code
   - [ ] Implement Markov field approach
-  - [ ] Discuss best practices with Jaime
   - [ ] Parallelization [0/5]
     - [ ] Find literature about Markov fields computation
       parallelization
@@ -16,18 +15,31 @@
     - [ ] GPUs
     - [ ] Cluster
     - [ ] Is StarPU suited?
-  - [ ] Optimization [0/1]
-    - [ ] Is BOAST suited? Can we mix it with StarPU?
+  - [-] Optimization [1/6]
+    - [ ] Code refactoring
+    - [ ] Code audit:
+      - profiling \to Gprof
+      - instrumenting \to PAPI or Likwid
+    - [X] Is BOAST suited? Can we mix it with StarPU?
+      Yes, but BOAST not suited for c++.
+    - [ ] How to organize data in memory (row vs column) eg. [MRI x
+      Observations] vs [Observations x MRI]
+    - [ ] Use fixed size matrices/vectors
+    - [ ] Use the right to type at the right place
   - [ ] Centralize Alexis's code and repo?
   - [ ] Ask Jaime about pyHRF
   - [X] Move =HMM_MMST.org= to Alexis's Gibbs project.
   - [-] Structure the repository using subrepo / submodule.
     - [X] Move repos outside the repo where the journal is
     - [ ] Use submodule
-  - [X] C++ code as .so
-    Using Rcpp to export and expose functions / classes to R.
-  - [X] Split c++ source
-  - [ ] Write test cases
+  - [-] A first running version
+    - [X] C++ code as .so
+      Using Rcpp to export and expose functions / classes to R.
+    - [X] Split c++ source
+    - [ ] Write test cases
+    - [ ] Computation of the lower bounds
+    - [ ] Computation of the log densities
+    - [ ] Conditional compilation of openmp version
 * Repository
   #+begin_src sh :results output :exports both
     # Gibbs MMST
