@@ -23,6 +23,8 @@
     - [X] Is the Dirichlet distribution the conjugate prior of the Gibbs
       distribution? No because the prior and the posterior follow the
       same distribution.
+*** Covariance
+    Expresses how much to elements vary together.
 *** Coefficient regularization
     See Shrinkage methods, weight decay.
 
@@ -33,11 +35,21 @@
 *** Likelihood
     The observations given the parameters:
     p(X|\theta)
+    Error function = -log(likelihood)
 *** Posterior distribution
     The parameters given the evidences:
     p(\theta|X)
     
 ** Bayesian
+*** Principle
+    Probabilities cannot always be constructed from repeatable
+    events.
+    No repeatable events \neq frequencies. No multiple data sets.
+    Expresses uncertainty on the parameters model.
+    Assumptions about parameter distribution \to prior (before having
+    observations). Represents belief.
+    
+    Informative vs non-informative prior.
 *** Maximum Likelihood
     Let : 
     - X be of set of observations {x_1,...,x_n}
@@ -100,6 +112,11 @@
      Maximize expected log likelihood (using the posterior) $Q(\theta,\theta^{old})$ by
      estimating means, covariances, mixing parameters, etc...
 
+*** Lower bound
+    \sum_z q(Z) [ ln(p(X,Z|\theta)) - ln(q(Z)) ]
+    Can be decomposed as
+    E_q_z [ ln(p(Z|X,\theta)) + ln(p(X|\theta) - ln(q(Z)) ]
+    Increase with q at the E and M step.
 *** Bayesian approach
     Parameters are considered as random variables.
 
