@@ -466,7 +466,7 @@
      #+begin_src R :results output :session :exports both
        library(Rcpp)
        setwd("/home/mistis/squinito/Dev/other/R/C/expose_class/src/")
-       lib <- dyn.load("A.so")
+       lib <- dyn.load("classes.so")
        mymodule <- Rcpp::Module("mod",lib)
 
        B <- mymodule$B
@@ -480,6 +480,150 @@
      : [1] 4
      : [1] 16
 
+**** Export list
+      When using a =std::list= or =std::vector= of a non-primitive
+      c++ type in a public field of a class or in a method parameter
+      Rcpp doesn't know how to convert the type. However if it is the
+      return type of a method, it doesn't complain.
+     #+BEGIN_SRC c++ :tangle /tmp/list.cpp
+       #include<Rcpp.h>
+             
+       class A{
+       public:
+           int x;
+           A(){}
+           A(int x):x(x){}
+       };
+
+       class B{
+       private:
+           std::list< A > a_list;
+       public:
+           A a;
+           B():a(10){ a_list.push_back(a); a_list.push_back(a);}
+           void foo(std::list< A > l){}
+           std::list< A > get_list(){return a_list;}
+           void set_list(const std::list< int > l){}
+       };
+
+       RCPP_EXPOSED_CLASS(A);
+       RCPP_EXPOSED_CLASS(B);
+
+       RCPP_MODULE(mod) {
+           using namespace Rcpp;
+           class_<A>("A")
+               .constructor()
+               .constructor<int>()
+               .field("x", &A::x, "blabla")
+               ;
+           class_<B>("B")
+               .constructor()
+               .field("a", &B::a, "blablabla")
+               //.field("a_list", &B::a_list, "blablabla")
+               .property("get_list", &B::get_list, "")
+               //.method("foo", &B::foo, "blabla")
+               ;
+           class_< std::list< A > >("list")
+               .constructor()
+               .method("pop_back", &std::list< A >::pop_back, "")
+               ;
+       }
+     #+END_SRC
+
+     #+BEGIN_SRC makefile
+       main: list.cpp
+               PKG_CPPFLAGS="-I/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" \
+               PKG_LIBS="-L/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp" \
+               R CMD SHLIB $^ -o liblist.so     
+       clean:
+               rm -f *.so *.o
+     #+END_SRC
+
+     #+begin_src sh :results output :exports both
+       cd /tmp
+       PKG_CPPFLAGS="-I/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" \
+       PKG_LIBS="-L/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp" \
+       R CMD SHLIB list.cpp -o liblist.so
+
+     #+end_src
+
+     #+RESULTS:
+
+     #+begin_src R :results output :exports both
+       library(Rcpp)
+       setwd("/tmp")
+       lib <- dyn.load("list.so")
+       mymod <- Rcpp::Module("mod", lib)
+       B <- mymod$B
+       b <- new(B)
+       list <- b$get_list()
+       list
+     #+end_src
+
+     #+RESULTS:
+     : [[1]]
+     : C++ object <0x1f4d890> of class 'A' <0x2a0d350>
+     : 
+     : [[2]]
+     : C++ object <0x27ceac0> of class 'A' <0x2a0d350>
+     : 
+
+      In fact the problem is not =std::list/vector/whatever= but what it
+      contains if we want to use it like this we need to tell R how to
+      convert A.
+     #+BEGIN_SRC c++ :tangle /tmp/RcppWrapper.cpp
+       //#include<RcppCommon.h>
+
+       class A{
+       public:
+           int x;
+           A():x(10){}
+           // A(const A& a):x(a.x){}
+           // ~A(){}
+           // A(SEXPREC *x){}
+           //operator SEXP(){ return R_NilValue;}
+       };
+
+       /* namespace Rcpp{
+           // R to C++
+           template<> SEXP wrap(const A&);
+           // C++ to R
+           // template <> class Exporter< std::vector<A> >;
+       } */
+
+       #include<Rcpp.h>       
+
+       RCPP_EXPOSED_CLASS(A);
+       RCPP_EXPOSED_WRAP(A);
+       RCPP_EXPOSED_AS(A);
+
+       /* namespace Rcpp{
+           // R to C++
+           SEXP wrap(const A& obj){
+               return R_NilValue;
+           }
+       } */
+
+       extern "C" SEXP foo(SEXP x){
+           std::list< A > x_ = Rcpp::as< std::list< A > > (x);
+           return Rcpp::wrap(x_);
+           //return R_NilValue;
+       }
+     #+END_SRC
+
+      #+begin_src sh :results output :exports both
+        cd /tmp
+        PKG_CPPFLAGS="-I/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" \
+        PKG_LIBS="-L/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp" \
+        R CMD SHLIB RcppWrapper.cpp
+
+      #+end_src
+
+      #+RESULTS:
+
+      #+begin_src R :results output :session :exports both
+      
+      #+end_src
 ** 2017-11-20
    How much more computation will we do if we add borders with virtual
    voxels to avoid if conditions?
