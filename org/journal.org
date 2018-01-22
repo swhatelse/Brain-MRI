@@ -8,13 +8,15 @@
   - [ ] Create R package from Stephane Despreaux source code
   - [ ] Implement Markov field approach
   - [ ] Parallelization [0/5]
-    - [ ] Find literature about Markov fields computation
+    - [ ] Find how to parallelize efficiently Markov fields computation
       parallelization
-    - [ ] Take a look at Stable/independent set \to Markov fields
-      decomposition 
-    - [ ] GPUs
+      - [ ] Take a look at Stable/independent set \to Markov fields
+        decomposition 
+    - [ ] CPU version
+    - [ ] GPU version
     - [ ] Cluster
-    - [ ] Is StarPU suited?
+    - [ ] Tools to ease this task
+      - [ ] Is StarPU suited?
   - [-] Optimization [1/6]
     - [ ] Code refactoring
     - [ ] Code audit:
@@ -27,7 +29,6 @@
     - [ ] Use fixed size matrices/vectors
     - [ ] Use the right to type at the right place
   - [ ] Centralize Alexis's code and repo?
-  - [ ] Ask Jaime about pyHRF
   - [X] Move =HMM_MMST.org= to Alexis's Gibbs project.
   - [-] Structure the repository using subrepo / submodule.
     - [X] Move repos outside the repo where the journal is
