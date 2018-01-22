@@ -871,6 +871,14 @@
        COMMON_OPT="-O2 -march=native -mtune=native -mavx -mavx2 -msse -msse2 -msse3 -msse4 -ftree-loop-vectorize -ftree-slp-vectorize" make
      #+end_src
 *** 2018-01-19
+**** Meeting
+     - Test the correctness of the code entire code:
+       We can first try to set beta = 0
+       which means that the locality part is not taken into account
+       and compare it with Stephane Despréaux's package.
+     - Neighbourhood:
+       Consider only voxels inside a tumor \to irregular shape.
+       Maybe take a look at SpaceM^3 to see how it done.
 * Emacs Setup 							   :noexport:
   This document has local variables in its postembule, which should
   allow Org-mode to work seamlessly without any setup. If you're
