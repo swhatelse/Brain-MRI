@@ -1,4 +1,4 @@
-#+TAGS: noexport(n) software(s) Alexis(a) Florence(f) deprecated(d) EM(e) HMM(h) MMST(m) R(r) C(c)
+#+TAGS: noexport(n) software(s) Alexis(a) Florence(f) deprecated(d) EM(e) HMM(h) MMST(m) R(r) C(c) Bug(b)
 
 #+Title: Journal
 #+AUTHOR:      Steven QUINITO MASNADA
