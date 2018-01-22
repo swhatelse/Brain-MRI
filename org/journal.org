@@ -832,7 +832,45 @@
        - =update_diagonal=
          Same as orthogonal.
 
-     
+*** DONE 2018-01-12
+    - [X] What is the shape of =Gibbs_Law::outer_fields=?
+      \alpha \in \real^{K} with K being the number of clusters.
+*** 2018-01-15
+    - [ ] In =Gamma_Law::update_shape= =temp_rate= isn't used anywhere,
+      why?
+    - [X] Segmentation error caused by [[file:~/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/Gamma_Law.cpp::106]]
+      #+BEGIN_SRC c++
+        arma::vec Gamma_x( 1 , fill::zeros ) ;
+        Gamma_x( 0 ) = x ;
+        Gamma_x = digamma( Rcpp::NumericVector( Gamma_x.begin( ) , Gamma_x.end( ) ) ) ;
+      #+END_SRC
+      To manipulate R objects/functions from C++ the C++ code need to
+      be launched from R. Because an R session need to be
+      open. Otherwise we get segfault when trying to create a simple R
+      variable type.
+
+*** 2018-01-16
+**** Meeting Guillaume BARAT NVIDIA
+***** Our work
+      - Brain MRI for tumors detection
+      - Image clustering \to Hidden Markov Random Field.
+        EM algorithm \to Iterative algo to Maximize the likelihood.
+        Not feasible to compute normalizing constant of the posterior
+        distribution \to Variational approximation \to lots of
+        dependencies between observations in the same iterations.
+        
+***** Questions
+      - [ ] Hidden Markov Random Fields / Potts model on GPU?
+        Variational Approach \to dependencies between voxels in an iteration.
+      - [X] Any tools about graph processing on GPU?
+        cuGraph
+      - [ ] Thread divergence \to cooperative groups in Volta or Cuda 9?
+*** 2018-01-18
+**** Openblas compilation flags
+     #+begin_src sh :results output :exports both
+       COMMON_OPT="-O2 -march=native -mtune=native -mavx -mavx2 -msse -msse2 -msse3 -msse4 -ftree-loop-vectorize -ftree-slp-vectorize" make
+     #+end_src
+*** 2018-01-19
 * Emacs Setup 							   :noexport:
   This document has local variables in its postembule, which should
   allow Org-mode to work seamlessly without any setup. If you're
