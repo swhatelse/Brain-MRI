@@ -15,6 +15,10 @@
     - [ ] Computation of the lower bounds
     - [ ] Computation of the log densities
     - [ ] Conditional compilation of openmp version
+    - [ ] Simplify the use of the software
+      - [ ] Automated initialization from a data only
+      - [ ] Ability to provide hand made data for the different step
+        of the algorithm.
   - [-] Optimization [1/6]
     - [ ] Code refactoring
     - [ ] Code audit:
@@ -547,6 +551,8 @@
      #+end_src
 
      #+RESULTS:
+     : g++  -I/usr/share/R/include -DNDEBUG -I/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include     -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c list.cpp -o list.o
+     : g++ -shared -L/usr/lib/R/lib -Wl,-Bsymbolic-functions -Wl,-z,relro -o liblist.so list.o -L/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/usr/lib/R/lib -lR
 
      #+begin_src R :results output :exports both
        library(Rcpp)
@@ -869,7 +875,7 @@
        COMMON_OPT="-O2 -march=native -mtune=native -mavx -mavx2 -msse -msse2 -msse3 -msse4 -ftree-loop-vectorize -ftree-slp-vectorize" make
      #+end_src
 *** 2018-01-19
-**** Meeting
+**** Meeting                                                :Alexis:Florence:
      - Test the correctness of the code entire code:
        We can first try to set beta = 0
        which means that the locality part is not taken into account
@@ -877,6 +883,143 @@
      - Neighbourhood:
        Consider only voxels inside a tumor \to irregular shape.
        Maybe take a look at SpaceM^3 to see how it done.
+*** 2018-01-22
+**** Neighbourhood system in SpaceM^3
+     Neighbour index and weight stored in a same class
+     =Weighted_Neighbor=.
+     In the case of an image, a neighbour lay in rectangular window
+     and has a non-zero weight.
+     The neighbours for each observation are stored in file .nei
+     containing per observations the index, the number of neighbours,
+     the list of neighbours and the optional weight associated.
+*** 2018-01-24
+**** Thinking about neighbourhood system.    
+     We want the program to work only on data of interest(voxels
+     belonging the brain for healthy subjects or voxels belonging to
+     tumors for data form pathological subjects).
+     Two possibilities:
+     - Work on the entire data set with indirection (using a directory
+       of indexes) to jump data of interest.
+     - Work on a reduced data set (only data of interest) \to imply to
+       copy the data, work on the reduced set, and write back to the
+       corresponding data. This is the chosen solution for now.
+*** 2018-01-25
+**** TODO File format [0/1]
+     - [ ] Take a look at HDF5
+*** 2018-01-26
+    =new()= does not work alone is a .R file \to need to specify the class
+    as a prefix as MyClass$new(...)
+    #+begin_src R :results output :session :exports both
+      library("Rcpp")
+      library("optparse")
+
+      setwd("/home/mistis/squinito/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R")
+
+      lib <- dyn.load("libRHmmMmst.so")
+      mod <- Rcpp::Module("model_module",lib)
+      Model <- mod$Model
+
+      data <- vector(
+          mode = "list"
+        , length = 5
+      )
+      names(x = data) <- c("observations", "observation_number", "dimension_number", "neighbourhood", "neighbour_count")
+
+
+      data$observations= as.matrix(read.csv("img/color_test/test1_reduced.csv", sep=",", quote="\""))
+
+      nghd <- as.matrix(read.table("img/color_test/test1_reduced.csv", sep=",", quote="\"", header=TRUE))
+      data$neighbour_count = nghd[,1]
+      data$neighbourhood = nghd[,-1]
+
+      cluster_count = 2
+
+      model <- new(Class = Model, "MMST", data$observations, cluster_count, data$neighbourhood, data$neighbour_count)
+
+      model
+    #+end_src
+
+    #+RESULTS:
+    : C++ object <0x32356b0> of class 'Model' <0x12cb200>
+*** 2018-01-30
+**** TODO Cleaning git history[3/4]
+      - [ ] Group unit tests
+      - [X] Group matrix/vector shape modifications
+        - [X] Split =Vector/matrix shapes correction= \to =684933f8e05908ee5c7fcbaeca45f7d01cc9afac=
+          To extract modifs to main.cpp
+        - [X] =Corrected comments about matrix/vector shapes=
+        - [X] =Corrected variable definitions=
+        - [X] =Corrected glossary= ?
+        - [X] =Gamma::shape is now a row vector and we are consistent the=
+          =way we store the data in Gamma::rate=
+        - [X] =Add comment about vector and matrices shapes=          
+        - [X] =Added comments= \to =Gibbs_Law.hpp=
+        #+BEGIN_EXAMPLE
+        pick b1c5112 Makefile for unit tests
+        pick 7bf5fa8 Added Gamma_Law unit test
+        pick 26df439 Added Gaussian_Law unit tests
+        reword 1bf9df5 Added comments
+        fixup db0f195 Added comment about vector and matrice shapes
+        fixup 13e413e Gamma::shape is now a row vector and we are consistent the way we store the data in Gamma::rate (Col = Observation, Row = MRI)
+        fixup 6c1e7e7 Corrected glossary
+        fixup 05f3b08 Corrected variable definitions
+        fixup f78cf85 Corrected comments about matrix/vector shapes
+        fixup dd1e8fe Vector/matrix shapes correction
+        fixup 67ada40 Added comment
+        fixup 958e4ed Added comment
+        pick cb3cd95 Added utils such as neighourhood building, need to be moved in the git history
+        pick 75580d7 Corrected boolean statement in Model::initialization
+        pick b1f6e41 Added configuration info
+        pick ab12154 Running fully from c++ for monitoring
+        pick c487bef std::list attributes are now public
+        pick 12dc0ac Outsourced the neighbourhood creation function
+        reword ae3d6db Corrected shape of the Gibbs outer field in main.cpp
+        fixup 10e20ea Corrected Gamma_Law::mean shape
+        pick 429f23f Added new initialization constructors
+        pick 0128142 Using custom digamma function
+        pick e5570f9 Added comments
+        pick d91adab Simplified makefile
+        pick 24099ad Updated file
+        pick b3c5158 Added gprof compilation flag
+        pick 52d8823 Added examples cases and README
+
+        #+END_EXAMPLE        
+      - [X] Group new constructors
+      - [X] Group lonely comments
+        #+BEGIN_EXAMPLE
+reword d94cfbf Added comments to Multinomial_Law
+fixup 18eb70e Added comments
+fixup 1771450 Added comment
+fixup e608442 Added comments
+fixup efc1362 Comments Gamma_Law
+pick f520978 Corrected log density + added unit tests
+pick b7c9fa8 Reformated code
+pick 48a8d82 Corrected error
+pick b5f9518 Corrected diagram
+pick 1b5d65a Reformated code and added comments
+pick 4e99d97 Makefile for unit tests
+pick 0346b23 Added Gamma_Law unit test
+pick ef449de Added Gaussian_Law unit tests
+pick 875af86 Corrected errors caused by the way data were stored into vectors/matrices and incorrectly used
+pick 8c72127 Added utils such as neighourhood building, need to be moved in the git history
+pick dcfb3e6 Corrected boolean statement in Model::initialization
+pick f42cc5e Added configuration info
+pick 2d30784 Running fully from c++ for monitoring
+pick 70fcd88 std::list attributes are now public
+pick 464468c Outsourced the neighbourhood creation function
+pick 0e7d60b Added new initialization constructors
+pick 9da32c9 Using custom digamma function
+pick 7ae57f0 Added comments
+pick 9109e03 Simplified makefile
+pick 5a61cc2 Updated file
+pick e2d7060 Added gprof compilation flag
+pick 9766543 Added examples cases and README
+        #+END_EXAMPLE
+**** Computation errors
+     Infinite or nan values produced in the code \to check:
+     - degree of freedom are positve
+     - the diagonal matrix A_k is positive
+     - that the value taken by the functions in the domain of definition
 * Emacs Setup 							   :noexport:
   This document has local variables in its postembule, which should
   allow Org-mode to work seamlessly without any setup. If you're
