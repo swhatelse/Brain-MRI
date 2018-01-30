@@ -189,6 +189,11 @@
 *** Mean field approximation
     Used to approximate the distribution of a MRF
 
+* Lesion localization
+  - Learning on a data set of healthy patient. Clustering on type of
+    tissue on the entire image..
+  - Abnormal cells \to have MRI value above a threshold.
+  - Run clustering only on abnormal cells
 * Programming
 ** How to reduce cache miss on big multi-dimensional arrays?
 * Emacs Setup 							   :noexport:
