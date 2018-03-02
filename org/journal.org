@@ -1,4 +1,4 @@
-#+TAGS: noexport(n) software(s) Alexis(a) Florence(f) deprecated(d) EM(e) HMM(h) MMST(m) R(r) C(c) Bug(b)
+#+TAGS: noexport(n) software(s) Alexis(a) Florence(f) deprecated(d) EM(e) HMM(h) MMST(m) R(r) C(c) Bug(b) Optimization(o)
 
 #+Title: Journal
 #+AUTHOR:      Steven QUINITO MASNADA
@@ -11,12 +11,12 @@
       Using Rcpp to export and expose functions / classes to R.
     - [X] Split c++ source
     - [ ] Write test cases
-    - [ ] Neighbourhood system
+    - [X] Neighbourhood system
     - [ ] Computation of the lower bounds
     - [ ] Computation of the log densities
     - [ ] Conditional compilation of openmp version
-    - [ ] Simplify the use of the software
-      - [ ] Automated initialization from a data only
+    - [-] Simplify the use of the software
+      - [X] Automated initialization from a data only
       - [ ] Ability to provide hand made data for the different step
         of the algorithm.
   - [-] Optimization [1/6]
@@ -1019,7 +1019,120 @@ pick 9766543 Added examples cases and README
      Infinite or nan values produced in the code \to check:
      - degree of freedom are positve
      - the diagonal matrix A_k is positive
-     - that the value taken by the functions in the domain of definition
+     - that the value taken by the functions in the domain of
+       definition
+       - [X] log functions
+       - [X] digamma
+       - [X] lgamma
+     
+     - [X] Negative values in the diagonal of the precision matrix:
+       After few iterations it turns out the diagonal of the precision
+       matrix have some negative values. 
+       - [X] Negatives probabilities q_z_n:
+         - [X] Negative outer field values:
+           This causes probabilities to be negatives because the
+           interaction part is too weak (or equals 0 if the local
+           field is 0)  to compensate.
+           - [X] Cause:
+             - [X] The reason why the outer field values are too small
+               is because of the part:
+               #+BEGIN_SRC c
+                 clusters_it->gamma.shape % log( clusters_it->gamma.rate.row( 0 ) )
+               #+END_SRC
+
+               Which equals 0 because it seems that =clusters_it->gamma.rate= has not been
+               updated yet and is initialized to 1 and log(1) = 0.
+
+             - [X]  So to what values rate should be initialized?
+               It should be ok to initialize shape and rate to 1.
+               
+             - [X] Take the exponential when computing the probabilities
+
+
+     - [X] \sum q_zn not always equals to 1:
+       - [X] Cause : This is due to round off errors. 
+       - [X] What are the impacts?
+         They should be minimal.
+     - [ ] NaN values in =RetractionQR_C=
+       Why does =out= have a zero column?
+       #+begin_src R :results output :session :exports both
+         B <- matrix(c(3.9134e+07, 3.9134e+07, 3.9134e+07,
+                       3.9951e+07, 3.9951e+07, 3.9951e+07,
+                       4.0059e+07, 4.0059e+07, 4.0059e+07),
+                     nrow=3, ncol=3)
+         out <- B
+         B
+         out
+         out[,1] %*% t( (t( B[,1] ) %*% out[,1]) / t( diag(t(out[,1]) %*% out[,1]) ) )
+         B[,1] - out[,1] %*% t( (t( B[,1] ) %*% out[,1]) / t( diag(t(out[,1]) %*% out[,1]) ) ) ;
+       #+end_src
+
+       #+RESULTS:
+       #+begin_example
+                [,1]     [,2]     [,3]
+       [1,] 39134000 39951000 40059000
+       [2,] 39134000 39951000 40059000
+       [3,] 39134000 39951000 40059000
+                [,1]     [,2]     [,3]
+       [1,] 39134000 39951000 40059000
+       [2,] 39134000 39951000 40059000
+       [3,] 39134000 39951000 40059000
+                [,1]
+       [1,] 39134000
+       [2,] 39134000
+       [3,] 39134000
+            [,1]
+       [1,]    0
+       [2,]    0
+       [3,]    0
+#+end_example
+
+** February
+*** 2018-02-07
+**** DONE Possible optimizations in ALS and Gaussian orthogonal estimate. :Optimization: [2/2]
+     - [X] In =Gaussian_Law.cpp= the matrix =A_k= is filled with the exact same
+       values for each rows and it is used row row in subsequent
+       computation. We end up have a N \times M matrix instead of a M
+       vector.
+       We can replace it with a vector but in bayesian we would need a
+       matrix. 
+     - [X] In =Gaussian_Law.cpp =V_k= represents W_g as a cube \real^{M \times M \times N} 
+       but in the paper "/Orthogonal Stiefield manifold/
+       /optimization for eigen-decomposed covariance parameter/
+       /estimation in mixture models/", it is a matrix \in \real^{M \times M}. 
+       The reason is we cannot directly do the sum like in the paper
+       because of A^{-1} = U_i A where U_i is the gamma law mean for the i^{th}
+       observation. So we are forced to put the entire matmult in the
+       sum over the observations.
+**** TODO Questions about ALS [1/2]
+     - [ ] What is the difference  between A^{-1} in the paper and U A? U
+       being the mean of the gamma distribution.
+       Here we directly work with the precision matrix which is the
+       inverse of the covariance matrix.
+       But why do we use the gamma mean distribution?
+     - [X] Is =RetractionQR_C= returning the matrix Q of the QR
+       decomposition of X + V (notation used in the paper)? 
+*** 2018-02-09
+    Error when running a version of Alexis's code using openmp:
+    #+BEGIN_EXAMPLE
+    error: subtraction: incompatible matrix dimensions: 0x1 and 1x1
+    terminate called after throwing an instance of 'std::logic_error'
+    what():  subtraction: incompatible matrix dimensions: 0x1 and 1x1
+    #+END_EXAMPLE
+    Turns out it was because there was a call to a R function. It 
+    doesn't mix well with openmp because of the R session.
+*** 2018-03-01
+**** Discussion with Alexis                                          :Alexis:
+***** Parallelization
+      - Possible to parallelize:
+        - Computation of the Weights in E-step
+        - M-Step
+      - ALS:
+        - Check how error growths with the number of observations
+        - The optimization gives an orthogonal matrix
+        - Try sub sampling (consider a sub part of the observations ) 
+          \to try to reduce the error and also run faster. Check accuracy
+      
 * Emacs Setup 							   :noexport:
   This document has local variables in its postembule, which should
   allow Org-mode to work seamlessly without any setup. If you're
