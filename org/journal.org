@@ -1123,16 +1123,22 @@ pick 9766543 Added examples cases and README
     doesn't mix well with openmp because of the R session.
 *** 2018-03-01
 **** Discussion with Alexis                                          :Alexis:
-***** Parallelization
+***** TODO Parallelization [0/1]
       - Possible to parallelize:
         - Computation of the Weights in E-step
         - M-Step
-      - ALS:
-        - Check how error growths with the number of observations
-        - The optimization gives an orthogonal matrix
-        - Try sub sampling (consider a sub part of the observations ) 
+      - [ ] ALS:
+        - [ ] Check how error growths with the number of observations
+        - [ ] Check that the optimization gives an orthogonal matrix
+        - [ ] Try sub sampling (consider a sub part of the observations ) 
           \to try to reduce the error and also run faster. Check accuracy
-      
+*** 2018-03-02
+**** TODO Meeting [0/3]
+     - [ ] Try differents values for \beta to see if the result is smoother e.g. \beta = 2
+     - [ ] Compare on data set where the result are not smooth
+     - [ ] Negative probability arising at step 49:
+       - [ ] Check if a class become empty \to reduce the number of class
+       - [ ] Use the max when manipulating exponential of probabilities 
 * Emacs Setup 							   :noexport:
   This document has local variables in its postembule, which should
   allow Org-mode to work seamlessly without any setup. If you're
