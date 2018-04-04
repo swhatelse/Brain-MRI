@@ -43,6 +43,8 @@
   - [-] Structure the repository using subrepo / submodule.
     - [X] Move repos outside the repo where the journal is
     - [ ] Use submodule
+  - [ ] SED presentation
+
 * Repository
   #+begin_src sh :results output :exports both
     # Gibbs MMST
@@ -1121,6 +1123,7 @@ pick 9766543 Added examples cases and README
     #+END_EXAMPLE
     Turns out it was because there was a call to a R function. It 
     doesn't mix well with openmp because of the R session.
+** March
 *** 2018-03-01
 **** Discussion with Alexis                                          :Alexis:
 ***** TODO Parallelization [0/1]
@@ -1138,7 +1141,65 @@ pick 9766543 Added examples cases and README
      - [ ] Compare on data set where the result are not smooth
      - [ ] Negative probability arising at step 49:
        - [ ] Check if a class become empty \to reduce the number of class
-       - [ ] Use the max when manipulating exponential of probabilities 
+       - [ ] Use the max when manipulating exponential of probabilities
+
+#+begin_src R :results output :session :exports both
+seq_time = 24
+t1 = 24*0.65
+t1_par = t1 / 10
+tot_par = 24*.35 + t1_par
+seq_time / tot_par
+#+end_src
+
+#+RESULTS:
+: [1] 2.409639
+
+*** 2018-03-22
+**** TODO Meeting [0/6]
+     - [ ] Integrate c++ code in R pipeline
+     - [ ] Use reference instead of copy of data
+     - [ ] Sample sub-part of the data in ALS
+       - [ ] Compare with complete data using the minimum of the
+         objective function.
+         - [ ] Try 1 / 2 pixels, 1 / 3, etc... and see if we are still
+           accurate enough.
+         - [ ] Try with a few points at the beggining and
+           increase the number of points near the end. 
+     - [ ] Porting ALS on GPU using CUDA and CUDA libraries 
+     - [ ] Compare with the ManifoldOptim package. 
+     - [ ] Save EM steps for easier debugging.
+** April
+*** 2018-04-03
+**** TODO Armadillo and GPU
+     - [ ] Take a look at bandicoot
+
+**** TODO Integrate c++ code in R pipeline
+***** Outputs of EM
+     #+BEGIN_EXAMPLE
+     mixtureModel
+     List of 10
+      $ model                      :List of 10
+       ..$ classId       : chr "18MMSD_GaussianModel@0x55f7384153d8"
+       ..$ groups        : int [1:45051] 1 1 1 1 3 3 1 1 1 3 ...                       # Model::clustering
+       ..$ probabilities : num [1:45051, 1:10] 0.874 0.9 0.913 0.822 0.283 ...         # Model::probabilities
+       ..$ logL          : num [1:1000] -234287 -233930 -233744 -233624 -233535 ...    # Model::lower_bound_vector
+       ..$ clusters      :List of 10
+       .. ..$ :List of 5
+       .. .. ..$ classId: chr "20MMSD_GaussianCluster@0x7fae28000a28"
+       .. .. ..$ weights: num [1:45051, 1:5] 1.013 1.016 0.969 0.983 1.013 ...         # Gamma_Law::mean (posterior / variational)
+       .. .. ..$ rate   : num 0.226                                                    # Class frequency \pi_{k}
+       .. .. ..$ nu     : num [1:5] 54.8 87.4 13 82.5 73.7                             # Gamma_Law::mean (prior / non-variational)
+       .. .. ..$ law    :List of 4
+       .. .. .. ..$ classId: chr "23MMSD_StiefelGaussianLaw@0x7fae28001b18"
+       .. .. .. ..$ mean   : num [1:5] -0.409 -0.1028 -0.0627 0.202 -0.4031            # Gaussian_Law::mean
+       .. .. .. ..$ Pmat   : num [1:5, 1:5] -0.0262 -0.9919 0.1024 -0.0677 -0.0177 ... # Gaussian_Law::orthogonal
+       .. .. .. ..$ Dmat   : num [1:5] 0.6417 0.3902 0.2072 0.0786 0.0511              # Gaussian_Law::diagonal
+            .
+            .
+            .
+     #+END_EXAMPLE
+     - [[file:~/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/R/Functions/Functions_v2016_02_04.R][Function_v2016_02_04.R]] \to =chooseKGroups()=
+       This is where the EM algorithm is invoked.
 * Emacs Setup 							   :noexport:
   This document has local variables in its postembule, which should
   allow Org-mode to work seamlessly without any setup. If you're
