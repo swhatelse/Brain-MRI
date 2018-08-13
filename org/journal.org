@@ -1,10 +1,10 @@
-#+TAGS: noexport(n) software(s) Alexis(a) Florence(f) deprecated(d) EM(e) HMM(h) MMST(m) R(r) C(c) Bug(b) Optimization(o)
+#+TAGS: noexport(n) software(s) Alexis(a) Florence(f) deprecated(d) EM(e) HMM(h) MMST(m) R(r) C(c) Bug(b) Optimization(o) Profiling(P)
 
 #+Title: Journal
 #+AUTHOR:      Steven QUINITO MASNADA
 #+BABEL: :tangle yes :noweb yes
 
-* TODO Objectives [1/6]
+* TODO Objectives [2/7]
   - [ ] Create R package from Stephane Despreaux source code
   - [-] A first running version
     - [X] C++ code as .so
@@ -43,8 +43,12 @@
   - [-] Structure the repository using subrepo / submodule.
     - [X] Move repos outside the repo where the journal is
     - [ ] Use submodule
-  - [ ] SED presentation
+  - [X] SED presentation
 
+* Workspace setup
+  #+BEGIN_SRC julia
+    Pkg.add("YAML")
+  #+END_SRC
 * Repository
   #+begin_src sh :results output :exports both
     # Gibbs MMST
@@ -59,91 +63,93 @@
   #+end_src
 * Tips
 ** Org mode
-   - To format a text to fit 80 charac / line \to fill-paragraph or fill-region
-* September
-** 2017-09-05
-*** Tumor detection process                                        :software:
-    1. ROI localization
-      a. Build the reference model of healthy subjects:
-        - Find data cluster according to their distribution (multiple
-        scale t-distributions) using the EM algorithm 
-        - Aggregate these distributions into a mixture model
-      b. Distriminate abnormal voxels:
-        - By using reference model to compute likelyhood score for each
-          voxels 
-        - Determine a threshold to distinguish healthy from pathological
-	  - Compute the different anomaly level thresholds using slope
-            heuristic
-	  - Compute threshold of only 2 components (healthy /
-            pathological) and keep the closest to one of the threshold
-            computed previously.
-    2. Build a anomaly model:
-       - same as in 1.a on abnormal voxels
-    3. Fingerprint model \to Supervised learning to characterize the
-       different tumor types:
-       - Compute the proportion of each anomaly clusters in the tumors
-       - Take into account their sizes.
-    4. Remove healthy isolated voxels considered as abnormal.
-       - Refined segmentation \to erosion-dilatation kernel to remove
-         isolated voxels.
-       - Refined fingerprint model \to redo 3. using refined segmentation
-** 2017-09-11
-*** EM algorithm explanation                                  :deprecated:EM:
-    _*Update:* The EM algorithm has been studied and described with more detail_
-    _in [[file:Notes.org][Notes.org]] and in [[file:HMM_MMST.org][HMM_MMST.org]]._
+   - To format a text to fit 80 charac / line \to fill-paragraph or
+     fill-region
+* 2017
+** September
+*** 2017-09-05
+**** Tumor detection process                                       :software:
+     1. ROI localization
+       a. Build the reference model of healthy subjects:
+         - Find data cluster according to their distribution (multiple
+         scale t-distributions) using the EM algorithm 
+         - Aggregate these distributions into a mixture model
+       b. Distriminate abnormal voxels:
+         - By using reference model to compute likelyhood score for each
+           voxels 
+         - Determine a threshold to distinguish healthy from pathological
+	   - Compute the different anomaly level thresholds using slope
+             heuristic
+	   - Compute threshold of only 2 components (healthy /
+             pathological) and keep the closest to one of the threshold
+             computed previously.
+     2. Build a anomaly model:
+        - same as in 1.a on abnormal voxels
+     3. Fingerprint model \to Supervised learning to characterize the
+        different tumor types:
+        - Compute the proportion of each anomaly clusters in the tumors
+        - Take into account their sizes.
+     4. Remove healthy isolated voxels considered as abnormal.
+        - Refined segmentation \to erosion-dilatation kernel to remove
+          isolated voxels.
+        - Refined fingerprint model \to redo 3. using refined segmentation
+*** 2017-09-11
+**** EM algorithm explanation                                 :deprecated:EM:
+     _*Update:* The EM algorithm has been studied and described with more detail_
+     _in [[file:Notes.org][Notes.org]] and in [[file:HMM_MMST.org][HMM_MMST.org]]._
 
-    In this case, the models used are t-distributions and the EM
-    algorithm try to find the following parameters:
-    - \mu \to mean of the distribution
-    - D \to Covariance matrix \to orientation
-    - A \to shape and volume
-    - \nu \to degrees of freedom
-    
-    There are two steps:
-    - Expectation \to compute posterior probabilities \to find latent variables
-    - Maximization \to update parameter model by maximizing the log likelyhood
-      \to find parameter values
-            
-* October
-** 2017-10-20
-*** Meeting
-    - For parallelization take a look at independent set \to grid/graph
-      partitioning, conditional independence + GPU + MRF
-    - Ideally, the order for which we compute the label
-      distribution (q_{z_n}) at each site should be randomized. This
-      imply a different graph dependency at each iteration.
-    - \beta \to Numerical optimization involves of sum above all the voxels
-      \to costly \to take a look at stochastic gradient.
-* November
-** 2017-11-06
-   - Considering the code, it seems a project is implemented by method
-     (e.g baysian, HMM, etc...) maybe it should be better if
-     everything is gathered in one project \to same code base.
+     In this case, the models used are t-distributions and the EM
+     algorithm try to find the following parameters:
+     - \mu \to mean of the distribution
+     - D \to Covariance matrix \to orientation
+     - A \to shape and volume
+     - \nu \to degrees of freedom
+     
+     There are two steps:
+     - Expectation \to compute posterior probabilities \to find latent variables
+     - Maximization \to update parameter model by maximizing the log likelyhood
+       \to find parameter values
+             
+** October
+*** 2017-10-20
+**** Meeting
+     - For parallelization take a look at independent set \to grid/graph
+       partitioning, conditional independence + GPU + MRF
+     - Ideally, the order for which we compute the label
+       distribution (q_{z_n}) at each site should be randomized. This
+       imply a different graph dependency at each iteration.
+     - \beta \to Numerical optimization involves of sum above all the voxels
+       \to costly \to take a look at stochastic gradient.
+** November
+*** 2017-11-06
+    - Considering the code, it seems a project is implemented by method
+      (e.g baysian, HMM, etc...) maybe it should be better if
+      everything is gathered in one project \to same code base.
 
-   - At first we will start with a 2D neighbourhood because on rat MRI
-     the resolution on the z-axis is low (only 5 vs 256). Indeed each slice
-     of the z-axis is far form each others and in this case
-     considering the neighbours in the z-axis seems not important
-     because they are very far compared to the one on the x or
-     y-axis. When moving to human MRI 3D neighbourhood will be necessary.
-** 2017-11-13
-*** TODO Meeting
-**** DONE Algorithms
-     Release a first implementation to see how it performs with
-     possible code optimization and then we can think about maybe
-     modifying the EM algorithm itself maybe with some approximations,
-     etc...
-**** DONE Code organization
-     Use as a basis the Bayesian version, but without the bayesian part
-     and include the HMM part to have quickly a version to test.
-     Once implemented we will see if we include this to SpaceM^3 or to
-     Stephane Despréaux package.
-**** TODO Git repo organization
-     - [ ] A git based work-flow
-       https://hal.inria.fr/hal-01112795/file/SIGOPS_paper.pdf
-** 2017-11-16
-*** R call C/C++                                                        :R:C:
-**** Dplyr example
+    - At first we will start with a 2D neighbourhood because on rat MRI
+      the resolution on the z-axis is low (only 5 vs 256). Indeed each slice
+      of the z-axis is far form each others and in this case
+      considering the neighbours in the z-axis seems not important
+      because they are very far compared to the one on the x or
+      y-axis. When moving to human MRI 3D neighbourhood will be necessary.
+*** 2017-11-13
+**** TODO Meeting
+***** DONE Algorithms
+      Release a first implementation to see how it performs with
+      possible code optimization and then we can think about maybe
+      modifying the EM algorithm itself maybe with some approximations,
+      etc...
+***** DONE Code organization
+      Use as a basis the Bayesian version, but without the bayesian part
+      and include the HMM part to have quickly a version to test.
+      Once implemented we will see if we include this to SpaceM^3 or to
+      Stephane Despréaux package.
+***** TODO Git repo organization
+      - [ ] A git based work-flow
+        https://hal.inria.fr/hal-01112795/file/SIGOPS_paper.pdf
+*** 2017-11-16
+**** R call C/C++                                                       :R:C:
+***** Dplyr example
      Dplyr use c++ so I just took it as an example just to check the compiler directives (include paths, etc...):
      #+begin_src R :results output :session :exports both
      install.packages("dplyr")
@@ -212,79 +218,79 @@
      Les packages source téléchargés sont dans
              ‘/tmp/Rtmp1i7F52/downloaded_packages’
 #+end_example
-**** C source
-***** Main
-     #+BEGIN_SRC c :tangle ../../../other/R/C/src/core/main.c
-       #include<stdio.h>
-       #include<stdlib.h>
+***** C source
+****** Main
+      #+BEGIN_SRC c :tangle ../../../other/R/C/src/core/main.c
+        #include<stdio.h>
+        #include<stdlib.h>
 
-       #include"vectorAdd.h"
+        #include"vectorAdd.h"
 
-       #define LENGTH 8
+        #define LENGTH 8
 
-       int main(int argc, char** argv){
-           int a[LENGTH] = {1,2,3,4,5,6,7,8};
-           int b[LENGTH] = {1,2,3,4,5,6,7,8};
+        int main(int argc, char** argv){
+            int a[LENGTH] = {1,2,3,4,5,6,7,8};
+            int b[LENGTH] = {1,2,3,4,5,6,7,8};
 
-           int c[LENGTH] = {0,0,0,0,0,0,0,0};
+            int c[LENGTH] = {0,0,0,0,0,0,0,0};
 
-           vectorAdd(a,b,c,LENGTH);
+            vectorAdd(a,b,c,LENGTH);
 
-           for(int i = 0; i < LENGTH; i++){
-               printf("%d ", c[i]);
-           }
-           
-           printf("\n");
-           
-           return EXIT_SUCCESS;
-       }
-     #+END_SRC
-***** Header 
-     #+BEGIN_SRC c :tangle ../../../other/R/C/src/core/vectorAdd.h
-       void vectorAdd(const int* a, const int *b, int *c, const int length);
-     #+END_SRC
-***** function
-     #+BEGIN_SRC c :tangle ../../../other/R/C/src/core/vectorAdd.cpp
-       #include"vectorAdd.h"
+            for(int i = 0; i < LENGTH; i++){
+                printf("%d ", c[i]);
+            }
+            
+            printf("\n");
+            
+            return EXIT_SUCCESS;
+        }
+      #+END_SRC
+****** Header 
+      #+BEGIN_SRC c :tangle ../../../other/R/C/src/core/vectorAdd.h
+        void vectorAdd(const int* a, const int *b, int *c, const int length);
+      #+END_SRC
+****** function
+      #+BEGIN_SRC c :tangle ../../../other/R/C/src/core/vectorAdd.cpp
+        #include"vectorAdd.h"
 
-       void vectorAdd(const int* a, const int *b, int *c, const int length){
-           for(int i = 0; i < length; i++){
-               c[i] = a[i] + b[i];
-           }
-       }
-     #+END_SRC
-***** Makefile
-     #+BEGIN_SRC makefile :tangle ../../../other/R/C/src/core/Makefile
-       CC=g++
-       CFLAGS=-O3
-       # INCLUDES=-I/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include -I/usr/share/R/include/
-       INCLUDES=
-       LIBS=-L/usr/lib/R/lib -lR
+        void vectorAdd(const int* a, const int *b, int *c, const int length){
+            for(int i = 0; i < length; i++){
+                c[i] = a[i] + b[i];
+            }
+        }
+      #+END_SRC
+****** Makefile
+      #+BEGIN_SRC makefile :tangle ../../../other/R/C/src/core/Makefile
+        CC=g++
+        CFLAGS=-O3
+        # INCLUDES=-I/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include -I/usr/share/R/include/
+        INCLUDES=
+        LIBS=-L/usr/lib/R/lib -lR
 
-       vectorAdd.o: vectorAdd.cpp
-       $(CC) $(CFLAGS) $(INCLUDES) -fPIC -c $^
+        vectorAdd.o: vectorAdd.cpp
+        $(CC) $(CFLAGS) $(INCLUDES) -fPIC -c $^
 
-       libvectoradd.so: vectorAdd.o
-       $(CC) $(CFLAGS) -shared -o $@ $^ $(LIBS)
+        libvectoradd.so: vectorAdd.o
+        $(CC) $(CFLAGS) -shared -o $@ $^ $(LIBS)
 
-       main: main.c
-       $(CC) $(CFLAGS) -o $@ $^ -L. -lvectoradd
+        main: main.c
+        $(CC) $(CFLAGS) -o $@ $^ -L. -lvectoradd
 
-       all: vectorAdd.o libvectoradd.so main
+        all: vectorAdd.o libvectoradd.so main
 
-       clean:
-       rm -f vectorAdd.o libvectoradd.so main
+        clean:
+        rm -f vectorAdd.o libvectoradd.so main
 
-     #+END_SRC
-***** Compile and run
-      #+begin_src sh :results output :exports both
-        cd ../../../other/R/C/src/core/
-        make all
-        export LD_LIBRARY_PATH=$PWD:$LD_LIBRARY_PATH
-        ./main
-      #+end_src
-**** C wrapper
-***** Manual
+      #+END_SRC
+****** Compile and run
+       #+begin_src sh :results output :exports both
+         cd ../../../other/R/C/src/core/
+         make all
+         export LD_LIBRARY_PATH=$PWD:$LD_LIBRARY_PATH
+         ./main
+       #+end_src
+***** C wrapper
+****** Manual
       Not sure R data structures stores elements are stored
       contiguously in memory and because I don't want to rely and R
       type, in the following example I use vector as a intermediary
@@ -334,430 +340,430 @@
             // return R_NilValue;
         }
       #+END_SRC
-***** Automatic
-**** C shared library for R
-     #+begin_src sh :results output :exports both
-       cd /home/mistis/squinito/Dev/other/R/C/src/r_wrapper
-       PKG_CPPFLAGS="-I/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" \
-       PKG_LIBS="-L/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp" \
-       R CMD SHLIB ../core/vectorAdd.cpp wrapper.cpp
-     #+end_src
+****** Automatic
+***** C shared library for R
+      #+begin_src sh :results output :exports both
+        cd /home/mistis/squinito/Dev/other/R/C/src/r_wrapper
+        PKG_CPPFLAGS="-I/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" \
+        PKG_LIBS="-L/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp" \
+        R CMD SHLIB ../core/vectorAdd.cpp wrapper.cpp
+      #+end_src
 
-**** R calling C
-     #+begin_src R :results output :session :exports both
-       library("Rcpp")
-       setwd("/home/mistis/squinito/Dev/other/R/C/src/core")
-       a = matrix(c(1,2,3,4),nrow=4,ncol=1)
-       b = matrix(c(1,2,3,4),nrow=4,ncol=1)
-       c = matrix(c(0,0,0,0),nrow=4,ncol=1)
-       x <- dyn.load("vectorAdd.so")
-       .Call("addVectorWrapper", a, b, c, 4)
-       c
-     #+end_src
+***** R calling C
+      #+begin_src R :results output :session :exports both
+        library("Rcpp")
+        setwd("/home/mistis/squinito/Dev/other/R/C/src/core")
+        a = matrix(c(1,2,3,4),nrow=4,ncol=1)
+        b = matrix(c(1,2,3,4),nrow=4,ncol=1)
+        c = matrix(c(0,0,0,0),nrow=4,ncol=1)
+        x <- dyn.load("vectorAdd.so")
+        .Call("addVectorWrapper", a, b, c, 4)
+        c
+      #+end_src
 
-     #+RESULTS:
-     : 2
-     : [1] 2 4 6 8
-     :      [,1]
-     : [1,]    0
-     : [2,]    0
-     : [3,]    0
-     : [4,]    0
+      #+RESULTS:
+      : 2
+      : [1] 2 4 6 8
+      :      [,1]
+      : [1,]    0
+      : [2,]    0
+      : [3,]    0
+      : [4,]    0
 
 
-**** Rcpp
-     - To crate a package using the specified c/c++ source files:
-       #+begin_src R :results output :session :exports both
-         Rcpp.package.skeleton(example_code=FALSE, cpp_files=c("src/vectorAdd.c", "src/vectorAdd.h"))
-       #+end_src
-       The package is create in different directory that the on
-       specified. It is silly because it copies files instead of just
-       turning the specified directory into a package.
+***** Rcpp
+      - To crate a package using the specified c/c++ source files:
+        #+begin_src R :results output :session :exports both
+          Rcpp.package.skeleton(example_code=FALSE, cpp_files=c("src/vectorAdd.c", "src/vectorAdd.h"))
+        #+end_src
+        The package is create in different directory that the on
+        specified. It is silly because it copies files instead of just
+        turning the specified directory into a package.
 
-     - Add c/c++ file references to RccExports.{R/cpp}
-       #+begin_src R :results output :session :exports both
-         compileAttributes(pkgdir="anRpackage/")
-       #+end_src
-**** Guideline
-     - Never use abort or exit or any stuff that can call them because
-       they kill the R process.
-**** Expose classes
-     #+BEGIN_SRC c++ :tangle ../../../other/R/C/expose_class/src/A.hpp
-       #ifndef A_HPP
-       #define A_HPP
-       #include<Rcpp.h>
+      - Add c/c++ file references to RccExports.{R/cpp}
+        #+begin_src R :results output :session :exports both
+          compileAttributes(pkgdir="anRpackage/")
+        #+end_src
+***** Guideline
+      - Never use abort or exit or any stuff that can call them because
+        they kill the R process.
+***** Expose classes
+      #+BEGIN_SRC c++ :tangle ../../../other/R/C/expose_class/src/A.hpp
+        #ifndef A_HPP
+        #define A_HPP
+        #include<Rcpp.h>
 
-       using namespace Rcpp;
+        using namespace Rcpp;
 
-       class A{
-       public:
-           int x;
+        class A{
+        public:
+            int x;
 
-           A(int x);
-           int foo();
-       };      
-       #endif
-     #+END_SRC
+            A(int x);
+            int foo();
+        };      
+        #endif
+      #+END_SRC
 
-     #+BEGIN_SRC c++ :tangle ../../../other/R/C/expose_class/src/A.cpp
-       #include"A.hpp"
+      #+BEGIN_SRC c++ :tangle ../../../other/R/C/expose_class/src/A.cpp
+        #include"A.hpp"
 
-       A::A(int x): x(x) {}
-       int A::foo(){ return x * x; }
-     #+END_SRC
+        A::A(int x): x(x) {}
+        int A::foo(){ return x * x; }
+      #+END_SRC
 
-     #+BEGIN_SRC c++ :tangle ../../../other/R/C/expose_class/src/B.hpp
-       #ifndef B_HPP
-       #define B_HPP
+      #+BEGIN_SRC c++ :tangle ../../../other/R/C/expose_class/src/B.hpp
+        #ifndef B_HPP
+        #define B_HPP
 
-       #include<Rcpp.h>
-       #include"A.hpp"
+        #include<Rcpp.h>
+        #include"A.hpp"
 
-       using namespace Rcpp;
+        using namespace Rcpp;
 
-       class B{
-       public:
-           A a;
-           B(int x);
-       };
+        class B{
+        public:
+            A a;
+            B(int x);
+        };
 
-       #endif
-     #+END_SRC
+        #endif
+      #+END_SRC
 
-     #+BEGIN_SRC c++ :tangle ../../../other/R/C/expose_class/src/B.cpp
-       #include"B.hpp"
+      #+BEGIN_SRC c++ :tangle ../../../other/R/C/expose_class/src/B.cpp
+        #include"B.hpp"
 
-       B::B(int x): a(x){ } 
-     #+END_SRC
+        B::B(int x): a(x){ } 
+      #+END_SRC
 
-     #+BEGIN_SRC c++ :tangle ../../../other/R/C/expose_class/src/RcppWrapper.cpp
-       #include"A.hpp"
-       #include"B.hpp"
-       RCPP_EXPOSED_CLASS(A);
-       RCPP_EXPOSED_CLASS(B);
-       RCPP_MODULE(mod) {
-           class_<A>( "A" )
-               // Constructors :
-               // .constructor( "default" )
-               .constructor< int >( "sets x" )
-               // Fields :
-               .field( "x", &A::x, "Value of x")
-               
-               // Methods :
-               .method( "foo", &A::foo, "access of the private field 'clusters'")
-               ;
-           class_<B>( "B" )
-               // Constructors :
-               // .constructor( "default" )
-               .constructor< int >( "sets a" )
-               // Fields :
-               .field( "a", &B::a, "Value of a")
-               
-               // Methods :
-               ;
-       }      
-     #+END_SRC
+      #+BEGIN_SRC c++ :tangle ../../../other/R/C/expose_class/src/RcppWrapper.cpp
+        #include"A.hpp"
+        #include"B.hpp"
+        RCPP_EXPOSED_CLASS(A);
+        RCPP_EXPOSED_CLASS(B);
+        RCPP_MODULE(mod) {
+            class_<A>( "A" )
+                // Constructors :
+                // .constructor( "default" )
+                .constructor< int >( "sets x" )
+                // Fields :
+                .field( "x", &A::x, "Value of x")
+                
+                // Methods :
+                .method( "foo", &A::foo, "access of the private field 'clusters'")
+                ;
+            class_<B>( "B" )
+                // Constructors :
+                // .constructor( "default" )
+                .constructor< int >( "sets a" )
+                // Fields :
+                .field( "a", &B::a, "Value of a")
+                
+                // Methods :
+                ;
+        }      
+      #+END_SRC
 
-     #+begin_src sh :results output :exports both
-       cd /home/mistis/squinito/Dev/other/R/C/expose_class/src
-       PKG_CPPFLAGS="-I/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" \
-       PKG_LIBS="-L/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp" \
-       R CMD SHLIB A.cpp B.cpp RcppWrapper.cpp -o libtest.so
-     #+end_src
+      #+begin_src sh :results output :exports both
+        cd /home/mistis/squinito/Dev/other/R/C/expose_class/src
+        PKG_CPPFLAGS="-I/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" \
+        PKG_LIBS="-L/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp" \
+        R CMD SHLIB A.cpp B.cpp RcppWrapper.cpp -o libtest.so
+      #+end_src
 
-     #+RESULTS:
-     : g++ -shared -L/usr/lib/R/lib -Wl,-Bsymbolic-functions -Wl,-z,relro -o libtest.so A.o B.o RcppWrapper.o -L/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/usr/lib/R/lib -lR
+      #+RESULTS:
+      : g++ -shared -L/usr/lib/R/lib -Wl,-Bsymbolic-functions -Wl,-z,relro -o libtest.so A.o B.o RcppWrapper.o -L/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/usr/lib/R/lib -lR
 
-     #+begin_src R :results output :session :exports both
-       library(Rcpp)
-       setwd("/home/mistis/squinito/Dev/other/R/C/expose_class/src/")
-       lib <- dyn.load("classes.so")
-       mymodule <- Rcpp::Module("mod",lib)
+      #+begin_src R :results output :session :exports both
+        library(Rcpp)
+        setwd("/home/mistis/squinito/Dev/other/R/C/expose_class/src/")
+        lib <- dyn.load("classes.so")
+        mymodule <- Rcpp::Module("mod",lib)
 
-       B <- mymodule$B
-       b <- new( B, 4 )
-       a <- b$a
-       a$x
-       a$foo()
-     #+end_src
+        B <- mymodule$B
+        b <- new( B, 4 )
+        a <- b$a
+        a$x
+        a$foo()
+      #+end_src
 
-     #+RESULTS:
-     : [1] 4
-     : [1] 16
+      #+RESULTS:
+      : [1] 4
+      : [1] 16
 
-**** Export list
-      When using a =std::list= or =std::vector= of a non-primitive
-      c++ type in a public field of a class or in a method parameter
-      Rcpp doesn't know how to convert the type. However if it is the
-      return type of a method, it doesn't complain.
-     #+BEGIN_SRC c++ :tangle /tmp/list.cpp
-       #include<Rcpp.h>
-             
-       class A{
-       public:
-           int x;
-           A(){}
-           A(int x):x(x){}
-       };
+***** Export list
+       When using a =std::list= or =std::vector= of a non-primitive
+       c++ type in a public field of a class or in a method parameter
+       Rcpp doesn't know how to convert the type. However if it is the
+       return type of a method, it doesn't complain.
+      #+BEGIN_SRC c++ :tangle /tmp/list.cpp
+        #include<Rcpp.h>
+              
+        class A{
+        public:
+            int x;
+            A(){}
+            A(int x):x(x){}
+        };
 
-       class B{
-       private:
-           std::list< A > a_list;
-       public:
-           A a;
-           B():a(10){ a_list.push_back(a); a_list.push_back(a);}
-           void foo(std::list< A > l){}
-           std::list< A > get_list(){return a_list;}
-           void set_list(const std::list< int > l){}
-       };
+        class B{
+        private:
+            std::list< A > a_list;
+        public:
+            A a;
+            B():a(10){ a_list.push_back(a); a_list.push_back(a);}
+            void foo(std::list< A > l){}
+            std::list< A > get_list(){return a_list;}
+            void set_list(const std::list< int > l){}
+        };
 
-       RCPP_EXPOSED_CLASS(A);
-       RCPP_EXPOSED_CLASS(B);
+        RCPP_EXPOSED_CLASS(A);
+        RCPP_EXPOSED_CLASS(B);
 
-       RCPP_MODULE(mod) {
-           using namespace Rcpp;
-           class_<A>("A")
-               .constructor()
-               .constructor<int>()
-               .field("x", &A::x, "blabla")
-               ;
-           class_<B>("B")
-               .constructor()
-               .field("a", &B::a, "blablabla")
-               //.field("a_list", &B::a_list, "blablabla")
-               .property("get_list", &B::get_list, "")
-               //.method("foo", &B::foo, "blabla")
-               ;
-           class_< std::list< A > >("list")
-               .constructor()
-               .method("pop_back", &std::list< A >::pop_back, "")
-               ;
-       }
-     #+END_SRC
+        RCPP_MODULE(mod) {
+            using namespace Rcpp;
+            class_<A>("A")
+                .constructor()
+                .constructor<int>()
+                .field("x", &A::x, "blabla")
+                ;
+            class_<B>("B")
+                .constructor()
+                .field("a", &B::a, "blablabla")
+                //.field("a_list", &B::a_list, "blablabla")
+                .property("get_list", &B::get_list, "")
+                //.method("foo", &B::foo, "blabla")
+                ;
+            class_< std::list< A > >("list")
+                .constructor()
+                .method("pop_back", &std::list< A >::pop_back, "")
+                ;
+        }
+      #+END_SRC
 
-     #+BEGIN_SRC makefile
-       main: list.cpp
-               PKG_CPPFLAGS="-I/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" \
-               PKG_LIBS="-L/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp" \
-               R CMD SHLIB $^ -o liblist.so     
-       clean:
-               rm -f *.so *.o
-     #+END_SRC
-
-     #+begin_src sh :results output :exports both
-       cd /tmp
-       PKG_CPPFLAGS="-I/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" \
-       PKG_LIBS="-L/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp" \
-       R CMD SHLIB list.cpp -o liblist.so
-
-     #+end_src
-
-     #+RESULTS:
-     : g++  -I/usr/share/R/include -DNDEBUG -I/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include     -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c list.cpp -o list.o
-     : g++ -shared -L/usr/lib/R/lib -Wl,-Bsymbolic-functions -Wl,-z,relro -o liblist.so list.o -L/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/usr/lib/R/lib -lR
-
-     #+begin_src R :results output :exports both
-       library(Rcpp)
-       setwd("/tmp")
-       lib <- dyn.load("list.so")
-       mymod <- Rcpp::Module("mod", lib)
-       B <- mymod$B
-       b <- new(B)
-       list <- b$get_list()
-       list
-     #+end_src
-
-     #+RESULTS:
-     : [[1]]
-     : C++ object <0x1f4d890> of class 'A' <0x2a0d350>
-     : 
-     : [[2]]
-     : C++ object <0x27ceac0> of class 'A' <0x2a0d350>
-     : 
-
-      In fact the problem is not =std::list/vector/whatever= but what it
-      contains if we want to use it like this we need to tell R how to
-      convert A.
-     #+BEGIN_SRC c++ :tangle /tmp/RcppWrapper.cpp
-       //#include<RcppCommon.h>
-
-       class A{
-       public:
-           int x;
-           A():x(10){}
-           // A(const A& a):x(a.x){}
-           // ~A(){}
-           // A(SEXPREC *x){}
-           //operator SEXP(){ return R_NilValue;}
-       };
-
-       /* namespace Rcpp{
-           // R to C++
-           template<> SEXP wrap(const A&);
-           // C++ to R
-           // template <> class Exporter< std::vector<A> >;
-       } */
-
-       #include<Rcpp.h>       
-
-       RCPP_EXPOSED_CLASS(A);
-       RCPP_EXPOSED_WRAP(A);
-       RCPP_EXPOSED_AS(A);
-
-       /* namespace Rcpp{
-           // R to C++
-           SEXP wrap(const A& obj){
-               return R_NilValue;
-           }
-       } */
-
-       extern "C" SEXP foo(SEXP x){
-           std::list< A > x_ = Rcpp::as< std::list< A > > (x);
-           return Rcpp::wrap(x_);
-           //return R_NilValue;
-       }
-     #+END_SRC
+      #+BEGIN_SRC makefile
+        main: list.cpp
+                PKG_CPPFLAGS="-I/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" \
+                PKG_LIBS="-L/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp" \
+                R CMD SHLIB $^ -o liblist.so     
+        clean:
+                rm -f *.so *.o
+      #+END_SRC
 
       #+begin_src sh :results output :exports both
         cd /tmp
         PKG_CPPFLAGS="-I/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" \
         PKG_LIBS="-L/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp" \
-        R CMD SHLIB RcppWrapper.cpp
+        R CMD SHLIB list.cpp -o liblist.so
 
       #+end_src
 
       #+RESULTS:
+      : g++  -I/usr/share/R/include -DNDEBUG -I/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include     -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g  -c list.cpp -o list.o
+      : g++ -shared -L/usr/lib/R/lib -Wl,-Bsymbolic-functions -Wl,-z,relro -o liblist.so list.o -L/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/usr/lib/R/lib -lR
 
-      #+begin_src R :results output :session :exports both
-      
+      #+begin_src R :results output :exports both
+        library(Rcpp)
+        setwd("/tmp")
+        lib <- dyn.load("list.so")
+        mymod <- Rcpp::Module("mod", lib)
+        B <- mymod$B
+        b <- new(B)
+        list <- b$get_list()
+        list
       #+end_src
-** 2017-11-20
-   How much more computation will we do if we add borders with virtual
-   voxels to avoid if conditions?
-    #+BEGIN_SRC ruby
-      h = 256
-      w = 256
-      n_h = 1
-      n_w = 1
 
-      ######### Naive approach #########
-      naive = 0
+      #+RESULTS:
+      : [[1]]
+      : C++ object <0x1f4d890> of class 'A' <0x2a0d350>
+      : 
+      : [[2]]
+      : C++ object <0x27ceac0> of class 'A' <0x2a0d350>
+      : 
 
-      # Borders
-      sum = 0
-      (0...(w - 2 * n_w)).each do
-        (0...(n_h)).each do |j|
-          sum += (2 * n_w + 1) * (n_h + 1 + j) - 2
-        end
-      end
+       In fact the problem is not =std::list/vector/whatever= but what it
+       contains if we want to use it like this we need to tell R how to
+       convert A.
+      #+BEGIN_SRC c++ :tangle /tmp/RcppWrapper.cpp
+        //#include<RcppCommon.h>
 
-      naive += 4 * sum
+        class A{
+        public:
+            int x;
+            A():x(10){}
+            // A(const A& a):x(a.x){}
+            // ~A(){}
+            // A(SEXPREC *x){}
+            //operator SEXP(){ return R_NilValue;}
+        };
 
-      # Corners
-      sum = 0
-      (0...(n_w)).each do |i|
-        (0...(n_h)).each do |j|
-          sum += (n_w + 1 + i) * (n_h + 1 + j) - 2
-        end
-      end
+        /* namespace Rcpp{
+            // R to C++
+            template<> SEXP wrap(const A&);
+            // C++ to R
+            // template <> class Exporter< std::vector<A> >;
+        } */
 
-      naive += 4 * sum
+        #include<Rcpp.h>       
 
-      naive += (w - 2 * n_w) * (h - 2 * n_h) * ((2 * n_h + 1) * (2 * n_w + 1) - 2)
+        RCPP_EXPOSED_CLASS(A);
+        RCPP_EXPOSED_WRAP(A);
+        RCPP_EXPOSED_AS(A);
 
-      ######### Virtual border approach #########
-      virt = h * w * ((2 * n_h + 1) * (2 * n_w + 1) - 2)
-      virt
+        /* namespace Rcpp{
+            // R to C++
+            SEXP wrap(const A& obj){
+                return R_NilValue;
+            }
+        } */
 
-      virt.to_f / naive.to_f
-   #+END_SRC
+        extern "C" SEXP foo(SEXP x){
+            std::list< A > x_ = Rcpp::as< std::list< A > > (x);
+            return Rcpp::wrap(x_);
+            //return R_NilValue;
+        }
+      #+END_SRC
 
-    #+RESULTS:
-    : 1.0067327358432598
+       #+begin_src sh :results output :exports both
+         cd /tmp
+         PKG_CPPFLAGS="-I/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include" \
+         PKG_LIBS="-L/home/mistis/squinito/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp" \
+         R CMD SHLIB RcppWrapper.cpp
 
-   Small computation overhead \to less than 1% more 
+       #+end_src
 
-** 2017-11-30
-*** DONE Questions [9/9]
-    - [X] Why does =Gamma_Law= have an attribute mean? (rate / shape)
-      The gamma law describes the distribution of the weights knowing
-      the labels and there no mean used in the formulas. Where is it
-      usefull and why? 
-      It isn't a parameter of the gamma law it is just stored for
-      convenience because the expectation of the gamma law is needed.
-    - [X] In the computation of the gamma rate parameter of the
-      posterior, is gamma_rate not supposed to be a vector of size
-      NB_CLUSTERS? In the formula we \delta_km. Same questions
-      for ~\delta \to =NB_MRI_DIMENSION= \times =N=.
-      Separation by cluster \to for each cluster there is a vector of
-      size =NB_MRI_DIMENSION=
-    - [X] In =Gibbs_Law::update_outer_fields= why is the outer field set
-      to the mean of the probabilities? 
-      This way \alpha behaves like \pi like in the classical case. This gives
-      a the multinomial case.
-      Maybe using -log(mean)
-    - [X] In =Gamma_Law::log_density=: rate is only a vector \to why same
-      rate for each voxels and clusters?
-      Because it the general case (Gibbs) > < variational. In the
-      Gibbs distribution each voxels have the same rates and
-      parameters. As opposed to the variational case, where each
-      voxels have their own parameters and thus their own gamma law.
-    - [X] What does follow a multinomial distribution? 
-      P(Z) which is a Gibbs distribution is approximated by the
-      posterior of the classes (q(z_n)), a multinomial law . Each z_n
-      follow its own multinomial law.
-    - [X] In the Model class, clustering is the belonging to a class
-      for each voxels and depends to the probability distribution
-      P(Z). It is only initialized, in the Model constructor but never
-      updated. The update of the lower bound takes into account the
-      clustering in =Model::update_lower_bound=, as =clustering= is not
-      update the lower bound is based on the initial distribution
-      of Z. The update is missing right?
-      Yes it is missing the update of the =lower_bound= will be done at
-      the end of the M-Step.
-    - [X] Why is the =lower_bound= updated just after the E_step and not
-      the M step?  Because probabilities P(Z) have to be computed just
-      after approximating the Gibbs distribution without modifying the
-      parameters (index coherency).
-    - [X] What is the log density for a cluster? Is it not supposed to
-      be P(Z)?  It is an MST law.
-    - [X] In each iteration of EM, just after the variational
-      approximation, in =Model::update_lower_bound= the lower is updated
-      taken into account the =lower_bound= of the clusters the this one
-      is never updated. I guess this part is missing.
-      Yes it is.
-*** Call structure
-    - =Model::initialization=: Initialize Q_zn and the labels for each pixels.
-    - =Model::em=
-      - =Variational::update=
-        - =Gamma_Law::variational_update=: Compute posterior rate,
-          shape, mean, outer field, local field
-          - =Gamma_Law::variational_update_shape=: Compute \gamma for the posterior
-          - =Gamma_Law::variational_update_rate=: Compute \delta for the posterior
-          - =Gamma_Law::variational_update_mean=: Compute \mu for the posterior
-            Divide vs [pow mult]
-        - =Multinomial_Law::variational_update=:
-          - =Multinomial_Law::variational_update_probabilities=: Compute
-            the posterior of the labels (q_z)
-      - =Model::update_lower_bound= 
-        - =Gibbs_Law::log_density= 
-      - =Cluster::update_M_step= 
-        - =Gamma_Law::update=
-          - =Gamma_Law::update_shape=: Compute \gamma
-          - =Gamma_Law::update_mean=: Compute the expectation of the
-            distribution
-        - =Gaussian_Law::update=
-          - =Gaussian_Law::update_mean=: Compute \mu
-          - =Gaussian_Law::update_orthogonal=: Compute D
-            - =Armijo_C=
-            - =gradf_C=
-            - =RetractionQR_C=
-            - =objectFunction_C=
-            - =RetractionQR_C=
-          - =Gaussian_Law::update_diagonal=: Compute A
-      - =Gibbs_Law::update=
-        - =Gibbs_Law::update_outer_fields=
-        - =Gibbs_Law::update_local_fields=: Does not compute \beta for now
+       #+RESULTS:
+
+       #+begin_src R :results output :session :exports both
+       
+       #+end_src
+*** 2017-11-20
+    How much more computation will we do if we add borders with virtual
+    voxels to avoid if conditions?
+     #+BEGIN_SRC ruby
+       h = 256
+       w = 256
+       n_h = 1
+       n_w = 1
+
+       ######### Naive approach #########
+       naive = 0
+
+       # Borders
+       sum = 0
+       (0...(w - 2 * n_w)).each do
+         (0...(n_h)).each do |j|
+           sum += (2 * n_w + 1) * (n_h + 1 + j) - 2
+         end
+       end
+
+       naive += 4 * sum
+
+       # Corners
+       sum = 0
+       (0...(n_w)).each do |i|
+         (0...(n_h)).each do |j|
+           sum += (n_w + 1 + i) * (n_h + 1 + j) - 2
+         end
+       end
+
+       naive += 4 * sum
+
+       naive += (w - 2 * n_w) * (h - 2 * n_h) * ((2 * n_h + 1) * (2 * n_w + 1) - 2)
+
+       ######### Virtual border approach #########
+       virt = h * w * ((2 * n_h + 1) * (2 * n_w + 1) - 2)
+       virt
+
+       virt.to_f / naive.to_f
+    #+END_SRC
+
+     #+RESULTS:
+     : 1.0067327358432598
+
+    Small computation overhead \to less than 1% more 
+
+*** 2017-11-30
+**** DONE Questions [9/9]
+     - [X] Why does =Gamma_Law= have an attribute mean? (rate / shape)
+       The gamma law describes the distribution of the weights knowing
+       the labels and there no mean used in the formulas. Where is it
+       usefull and why? 
+       It isn't a parameter of the gamma law it is just stored for
+       convenience because the expectation of the gamma law is needed.
+     - [X] In the computation of the gamma rate parameter of the
+       posterior, is gamma_rate not supposed to be a vector of size
+       NB_CLUSTERS? In the formula we \delta_km. Same questions
+       for ~\delta \to =NB_MRI_DIMENSION= \times =N=.
+       Separation by cluster \to for each cluster there is a vector of
+       size =NB_MRI_DIMENSION=
+     - [X] In =Gibbs_Law::update_outer_fields= why is the outer field set
+       to the mean of the probabilities? 
+       This way \alpha behaves like \pi like in the classical case. This gives
+       a the multinomial case.
+       Maybe using -log(mean)
+     - [X] In =Gamma_Law::log_density=: rate is only a vector \to why same
+       rate for each voxels and clusters?
+       Because it the general case (Gibbs) > < variational. In the
+       Gibbs distribution each voxels have the same rates and
+       parameters. As opposed to the variational case, where each
+       voxels have their own parameters and thus their own gamma law.
+     - [X] What does follow a multinomial distribution? 
+       P(Z) which is a Gibbs distribution is approximated by the
+       posterior of the classes (q(z_n)), a multinomial law . Each z_n
+       follow its own multinomial law.
+     - [X] In the Model class, clustering is the belonging to a class
+       for each voxels and depends to the probability distribution
+       P(Z). It is only initialized, in the Model constructor but never
+       updated. The update of the lower bound takes into account the
+       clustering in =Model::update_lower_bound=, as =clustering= is not
+       update the lower bound is based on the initial distribution
+       of Z. The update is missing right?
+       Yes it is missing the update of the =lower_bound= will be done at
+       the end of the M-Step.
+     - [X] Why is the =lower_bound= updated just after the E_step and not
+       the M step?  Because probabilities P(Z) have to be computed just
+       after approximating the Gibbs distribution without modifying the
+       parameters (index coherency).
+     - [X] What is the log density for a cluster? Is it not supposed to
+       be P(Z)?  It is an MST law.
+     - [X] In each iteration of EM, just after the variational
+       approximation, in =Model::update_lower_bound= the lower is updated
+       taken into account the =lower_bound= of the clusters the this one
+       is never updated. I guess this part is missing.
+       Yes it is.
+**** Call structure                                                :software:
+     - =Model::initialization=: Initialize Q_zn and the labels for each pixels.
+     - =Model::em=
+       - =Variational::update=
+         - =Gamma_Law::variational_update=: Compute posterior rate,
+           shape, mean, outer field, local field
+           - =Gamma_Law::variational_update_shape=: Compute \gamma for the posterior
+           - =Gamma_Law::variational_update_rate=: Compute \delta for the posterior
+           - =Gamma_Law::variational_update_mean=: Compute \mu for the posterior
+             Divide vs [pow mult]
+         - =Multinomial_Law::variational_update=:
+           - =Multinomial_Law::variational_update_probabilities=: Compute
+             the posterior of the labels (q_z)
+       - =Model::update_lower_bound= 
+         - =Gibbs_Law::log_density= 
+       - =Cluster::update_M_step= 
+         - =Gamma_Law::update=
+           - =Gamma_Law::update_shape=: Compute \gamma
+           - =Gamma_Law::update_mean=: Compute the expectation of the
+             distribution
+         - =Gaussian_Law::update=
+           - =Gaussian_Law::update_mean=: Compute \mu
+           - =Gaussian_Law::update_orthogonal=: Compute D
+             - =Armijo_C=
+             - =gradf_C=
+             - =RetractionQR_C=
+             - =objectFunction_C=
+             - =RetractionQR_C=
+           - =Gaussian_Law::update_diagonal=: Compute A
+       - =Gibbs_Law::update=
+         - =Gibbs_Law::update_outer_fields=
+         - =Gibbs_Law::update_local_fields=: Does not compute \beta for now
 * 2018
 ** January
 *** 2018-01-09
@@ -1172,9 +1178,15 @@ seq_time / tot_par
 *** 2018-04-03
 **** TODO Armadillo and GPU
      - [ ] Take a look at bandicoot
-
-**** TODO Integrate c++ code in R pipeline
-***** Outputs of EM
+     - [ ] Take a look at ArrayFire
+     - [ ] Take a look at OpenAcc + Armadillo
+**** TODO Integrate c++ code in R pipeline [2/3]
+***** TODO Wrap all data needed in a list for HMRF estimate [0/1]
+      - [ ] Add in [[file:~/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/R/01_Reference_model_adjustment_v2016_02_08.R][01_Reference_model_adjustment_v2016_02_08.R]]
+***** DONE Invoke HMRF estimate
+     - [[file:~/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/R/Functions/Functions_v2016_02_04.R][Function_v2016_02_04.R]] \to =chooseKGroups()=
+       This is where the EM algorithm is invoked.
+***** DONE Outputs format of EM
      #+BEGIN_EXAMPLE
      mixtureModel
      List of 10
@@ -1198,8 +1210,1183 @@ seq_time / tot_par
             .
             .
      #+END_EXAMPLE
-     - [[file:~/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/R/Functions/Functions_v2016_02_04.R][Function_v2016_02_04.R]] \to =chooseKGroups()=
-       This is where the EM algorithm is invoked.
+
+***** Error in preprocessing
+      This error happened because
+      /scratch/squinito/Dev/Data/Rats_Blind_test_Sain_-_Tumor_-_Lemasson_2016.csv
+      is empty.
+      #+BEGIN_EXAMPLE
+      squinito@poe:~/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R$ ./preprocess.py --list=data_files.conf 
+      Preprocessing /scratch/squinito/Dev/Data/Rats_9L_-_Brain_-_Lemasson_2016.csv
+      Preprocessing /scratch/squinito/Dev/Data/Rats_9L_-_Tumor_-_Lemasson_2016.csv
+      ./preprocess.py:80: SettingWithCopyWarning: 
+      A value is trying to be set on a copy of a slice from a DataFrame.
+      Try using .loc[row_indexer,col_indexer] = value instead
+      
+      See the caveats in the documentation: http://pandas.pydata.org/pandas-docs/stable/indexing.html#indexing-view-versus-copy
+      
+      ./preprocess.py:92: SettingWithCopyWarning: 
+      A value is trying to be set on a copy of a slice from a DataFrame.
+      Try using .loc[row_indexer,col_indexer] = value instead
+      
+      See the caveats in the documentation: http://pandas.pydata.org/pandas-docs/stable/indexing.html#indexing-view-versus-copy
+      
+      /usr/lib/python2.7/dist-packages/pandas/core/indexing.py:426: SettingWithCopyWarning: 
+      A value is trying to be set on a copy of a slice from a DataFrame.
+      Try using .loc[row_indexer,col_indexer] = value instead
+      
+      See the caveats in the documentation: http://pandas.pydata.org/pandas-docs/stable/indexing.html#indexing-view-versus-copy
+      self.obj[item] = s
+      Preprocessing /scratch/squinito/Dev/Data/Rats_Blind_test_9L_-_Brain_-_Lemasson_2016.csv
+      Preprocessing /scratch/squinito/Dev/Data/Rats_Blind_test_9L_-_Tumor_-_Lemasson_2016.csv
+      Preprocessing /scratch/squinito/Dev/Data/Rats_Blind_test_C6_-_Brain_-_Lemasson_2016.csv
+      Preprocessing /scratch/squinito/Dev/Data/Rats_Blind_test_C6_-_Tumor_-_Lemasson_2016.csv
+      Preprocessing /scratch/squinito/Dev/Data/Rats_Blind_test_F98_-_Brain_-_Lemasson_2016.csv
+      Preprocessing /scratch/squinito/Dev/Data/Rats_Blind_test_F98_-_Tumor_-_Lemasson_2016.csv
+      Preprocessing /scratch/squinito/Dev/Data/Rats_Blind_test_Sain_-_Brain_-_Lemasson_2016.csv
+      Preprocessing /scratch/squinito/Dev/Data/Rats_Blind_test_Sain_-_Tumor_-_Lemasson_2016.csv # <-- empty
+      Traceback (most recent call last):
+      File "./preprocess.py", line 149, in <module>
+      
+      File "./preprocess.py", line 141, in main
+      
+      File "./preprocess.py", line 97, in build_meta_data
+      data = gen_nghd_second(data, [x_dim, y_dim])
+      File "./preprocess.py", line 73, in build_mapping
+      
+      File "/usr/lib/python2.7/dist-packages/pandas/core/frame.py", line 2299, in __setitem__
+      self._set_item(key, value)
+      File "/usr/lib/python2.7/dist-packages/pandas/core/frame.py", line 2365, in _set_item
+      self._ensure_valid_index(value)
+      File "/usr/lib/python2.7/dist-packages/pandas/core/frame.py", line 2346, in _ensure_valid_index
+      raise ValueError('Cannot set a frame with no defined index '
+      ValueError: Cannot set a frame with no defined index and a value that cannot be converted to a Series
+
+      #+END_EXAMPLE
+
+      #+BEGIN_EXAMPLE
+      squinito@poe:~/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R$ ./preprocess.py --list=data_files.conf
+      Preprocessing /scratch/squinito/Dev/Data/Rats_C6_-_Brain_-_Lemasson_2016.csv
+      ./preprocess.py:80: SettingWithCopyWarning: 
+      A value is trying to be set on a copy of a slice from a DataFrame.
+      Try using .loc[row_indexer,col_indexer] = value instead
+      
+      See the caveats in the documentation: http://pandas.pydata.org/pandas-docs/stable/indexing.html#indexing-view-versus-copy
+      data["Reduced_Idx"] = data.apply(lambda x: data.index.get_loc(x.name), axis=1)
+      ./preprocess.py:92: SettingWithCopyWarning: 
+      A value is trying to be set on a copy of a slice from a DataFrame.
+      Try using .loc[row_indexer,col_indexer] = value instead
+      
+      See the caveats in the documentation: http://pandas.pydata.org/pandas-docs/stable/indexing.html#indexing-view-versus-copy
+      data[["N%d" % i]] = data.apply(lambda x: rev_map[x["N%d" % i]] if x["N%d" % i] != -1 else -1, axis = 1)
+      /usr/lib/python2.7/dist-packages/pandas/core/indexing.py:426: SettingWithCopyWarning: 
+      A value is trying to be set on a copy of a slice from a DataFrame.
+      Try using .loc[row_indexer,col_indexer] = value instead
+      
+      See the caveats in the documentation: http://pandas.pydata.org/pandas-docs/stable/indexing.html#indexing-view-versus-copy
+      self.obj[item] = s
+      Preprocessing /scratch/squinito/Dev/Data/Rats_C6_-_Tumor_-_Lemasson_2016.csv
+      Preprocessing /scratch/squinito/Dev/Data/Rats_F98_-_Brain_-_Lemasson_2016.csv
+      Preprocessing /scratch/squinito/Dev/Data/Rats_F98_-_Tumor_-_Lemasson_2016.csv
+      Preprocessing /scratch/squinito/Dev/Data/Rats_Outlier_9L_-_Brain_-_Lemasson_2016.csv
+      Preprocessing /scratch/squinito/Dev/Data/Rats_Outlier_9L_-_Tumor_-_Lemasson_2016.csv
+      Preprocessing /scratch/squinito/Dev/Data/Rats_Outlier_C6_-_Brain_-_Lemasson_2016.csv
+      Preprocessing /scratch/squinito/Dev/Data/Rats_Outlier_C6_-_Tumor_-_Lemasson_2016.csv
+      Preprocessing /scratch/squinito/Dev/Data/Rats_RG2_-_Brain_-_Lemasson_2016.csv
+      Preprocessing /scratch/squinito/Dev/Data/Rats_RG2_-_Tumor_-_Lemasson_2016.csv
+      Preprocessing /scratch/squinito/Dev/Data/Rats_Sain_-_Brain_-_Lemasson_2016.csv
+      Preprocessing /scratch/squinito/Dev/Data/Rats_Sain_-_Tumor_-_Lemasson_2016.csv
+      Traceback (most recent call last):
+      File "./preprocess.py", line 149, in <module>
+      main()
+      File "./preprocess.py", line 141, in main
+      reduced_data, nghd = build_meta_data(data, x_dim, y_dim)
+      File "./preprocess.py", line 97, in build_meta_data
+      data = build_mapping(data)
+      File "./preprocess.py", line 73, in build_mapping
+      axis=1)
+      File "/usr/lib/python2.7/dist-packages/pandas/core/frame.py", line 2299, in __setitem__
+      self._set_item(key, value)
+      File "/usr/lib/python2.7/dist-packages/pandas/core/frame.py", line 2365, in _set_item
+      self._ensure_valid_index(value)
+      File "/usr/lib/python2.7/dist-packages/pandas/core/frame.py", line 2346, in _ensure_valid_index
+      raise ValueError('Cannot set a frame with no defined index '
+      ValueError: Cannot set a frame with no defined index and a value that cannot be converted to a Series
+
+      #+END_EXAMPLE
+** May
+*** 2018-05-07                                                    :Profiling:
+**** Using gprof                                                 :deprecated:
+     Unfortunately gprof doesn't accomodate well with parallel
+     programs and doesn't seem very accurate (cf. result of
+     =2018_05_17_10_31_50=). It doesn't show the impact of the objective
+     function but we one it has.
+    #+begin_src sh :results output :exports both
+      ~/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/tests/performances/profiling/test /scratch/squinito/Dev/Data/Rats_Sain_-_Brain_-_Lemasson_2016_meta.csv -i 5 -t 8 -c 5
+      gprof test gmon.out > O2_omp_ref_gprof.txt
+      ~/.local/lib/python3.5/site-packages/gprof2dot.py O2_omp_ref_gprof.txt | dot -Tpng -o O2_omp_ref.png
+    #+end_src
+**** Using gperftool
+     #+begin_src sh :results output :exports both
+       ~/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/tests/performances/profiling/run_profiling.sh -d /scratch/squinito/Dev/Data/Rats_Sain_-_Brain_-_Lemasson_2016_meta.csv -c 5 -i 5 -n O2_copy_ALS -t 1
+     #+end_src
+     
+     - Sequential ALS (=O2_copy_t8_i5_c5_info=):
+       real	3m1.276s
+       user	11m54.592s
+       sys	1m35.280s
+       #+begin_src R :results output :session :exports both
+         tot_time_seq_als = 3 * 60 + 1.276
+         objf_pct_seq_als = 0.5484
+         objf_time_t1 = tot_time_seq_als * objf_pct
+         objf_time_t1
+       #+end_src
+
+       #+RESULTS:
+       : [1] 99.41176
+
+     - objective function 8 threads (=O2_copy_objf_t8_i5_c5_info=):
+       real	3m1.258s
+       user	12m0.892s
+       sys	1m35.676s
+       #+begin_src R :results output :session :exports both
+         tot_time = 3 * 60 + 1.258
+         objf_pct = 0.0963
+         objf_time_t8 = tot_time * objf_pct
+         objf_time_t8
+       #+end_src
+
+       #+RESULTS:
+       : [1] 17.45515
+       
+       Speedup according to gperftool measurement:
+       #+begin_src R :results output :session :exports both
+         speedup = objf_time_t1 / objf_time_t8
+         speedup
+       #+end_src
+
+       #+RESULTS:
+       : [1] 5.69527
+       
+       Estimated run time according to gperftool measurement:
+       #+begin_src R :results output :session :exports both
+         tot_time_seq_als - (objf_time_t1 - objf_time_t8)
+       #+end_src
+
+       #+RESULTS:
+       : [1] 99.31939
+
+       Estimated time based on the real kernel speedup:
+       #+begin_src R :results output :session :exports both
+         real_speedup = 2.182673
+         tot_time_seq_als - (objf_time_t1 - objf_time_t1 / 2.182673)
+       #+end_src
+
+       #+RESULTS:
+       : [1] 127.4101
+
+       There is something wrong somewhere because neither of the
+       estimated execution time is correct. More strangely, the used
+       version of the objective function as a speedup around 2 but it
+       seems to have no impact on the running time.
+       
+     - ALS 8 threads (=O2_copy_ALS_t8_i5_c5_info=):
+       real	3m3.779s
+       user	11m57.576s
+       sys	1m34.880s
+     - Full sequential (=O2_copy_ALS_t1_i5_c5_info=):
+       real     5m32.252s
+       user     5m14.304s
+       sys      0m18.324s
+
+     - [ ] Try to deactivate model parallelization
+** June
+*** 2018-06-26
+**** ALS MMSD version
+     - objective function in =src/mmsd/math/MATH_EigenFunction.cpp=
+       - Xk \times Gk should be W_g D A_g^{-1}
+       - G should be inv(Delta_k * A_k)
+       - X should be V_i
+     - Comparison with our c++ version:
+       - [X] Y_ij = 1; A = D = Delta_i = Id
+         Same results
+       - [X] Y_ij = i; A = D = Delta_i = Id
+         Same results
+       - [X] Y_ij = 1; D = some rotation matrix; A = Delta_i = Id
+         Same results
+       - [X] Y_ij = 1; A = Random integer; D = Delta_i = Id
+         Same results
+       - [X] Y_ij = 1; Delta_i = Random; A = D = Id
+         Same results
+       - [X] Y_ij = 1; A = D = Random; Delta_i = Id;
+         Same results
+       - [X] Y_ij = 1; A = D = Delta_i = Random;
+         Same results
+       - [X] Y_ij = i; A = D = Delta_i = Random;
+         Same results
+       - [X] Y_ij = A = D = Delta_i = Random;
+         Same results
+       
+       The problem came from the missing probability factor when
+       computing V.
+** July
+*** 2018-07-26
+**** DONE MPI vs Big Data
+     Big data framework are:
+     - much much slower
+     - can be tricky to use is the algorithm is complex
+     - most of them are for Java.
+**** TODO EM algo schema
+     Visualize the algorithm should help wrt. spliting data,
+     parallelize, communication, synchronization
+**** TODO Redesign application
+     - Readable and maintainable 
+     - Easily extendable:
+       Find the right level of abstraction \to close to what statisticians
+       are used to manipulate (e.g. distribution, random variables,
+       etc...)
+** August
+*** 2018-08-09
+**** Trying to understand behavior of the lowerbound
+     Let's try a simple case and compare MMSD and our implementation
+     by looking at the value of the eigen vectors.
+
+     - We generate 2 clusters:
+       #+begin_src R :results output graphics :file (org-babel-temp-file "figure" ".png") :exports both :width 600 :height 600 :session
+         nobs = 64
+         x1 = rnorm(nobs, 5, 1)
+         y1 = rnorm(nobs, 8, 1.5)
+         x2 = rnorm(nobs, 2, 1)
+         y2 = rnorm(nobs, 0, 0.5)
+         m = matrix(nrow = nobs * 2, ncol = 2)
+         m[,1] = c(x1,x2)
+         m[,2] = c(y1,y2)
+         K = 2
+         clusters = sample(c(0,1), nobs * 2, replace=TRUE)
+
+         dataSet = list(samplesNumber = nobs * 2, properties = m)
+
+         dataSet$neighbourhood = matrix(rep(NA, nobs * 2 * 8), nrow = nobs * 2, ncol = 8)
+         dataSet$neighbourCount = rep(0, nobs * 2)
+
+         plot(m)
+       #+end_src
+
+       #+RESULTS:
+       [[file:/tmp/babel-6364JDT/figure6364zUN.png]]
+
+     - ALS MMSD:
+       #+begin_src R :results output :session :exports both
+         library("ompmmsd")
+         library("Rcpp")
+
+         model1 = mmsd_estimate(dataSet=dataSet,nGroups=K,groups=clusters,iterationsNumber=1, orthogonalMethod = "S", orthogonalIterations = 1)
+         model1$clusters[[1]]$law$Pmat
+         model1$clusters[[2]]$law$Pmat
+       #+end_src
+
+       #+RESULTS:
+       #+begin_example
+       n: 2
+       n: 2
+       n: 2
+       n: 2
+       n: 2
+       n: 2
+                 [,1]       [,2]
+       [1,] 0.4145308 -0.9100353
+       [2,] 0.9100353  0.4145308
+                 [,1]       [,2]
+       [1,] 0.3967210 -0.9179392
+       [2,] 0.9179392  0.3967210
+#+end_example
+
+     - FG MMSD:
+       #+begin_src R :results output :session :exports both
+         model2 = mmsd_estimate(dataSet=dataSet,nGroups=K,groups=clusters,iterationsNumber=1, orthogonalMethod = "FG", orthogonalIterations = 1)
+         model2$clusters[[1]]$law$Pmat
+         model2$clusters[[2]]$law$Pmat
+       #+end_src
+
+       #+RESULTS:
+       :           [,1]       [,2]
+       : [1,] 0.4142428 -0.9101664
+       : [2,] 0.9101664  0.4142428
+       :           [,1]       [,2]
+       : [1,] 0.3958175 -0.9183292
+       : [2,] 0.9183292  0.3958175
+
+     - Our ALS:
+       #+begin_src R :results output :session :exports both
+         dataSet$neighbourhood = matrix(rep(NA, nobs * 2 * 8), nrow = nobs * 2, ncol = 8)
+         dataSet$neighbourCount = rep(0, nobs * 2)
+         setwd("/home/squinito/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/R")
+         source("Rcpp_EM_HMRF_MMSD.R")
+         model2 = hmrf_estimate(dataSet=dataSet, nGroups=K, orthogonalMaxIter=1)
+
+         model2$get_clusters()[[1]]$gaussian$orthogonal
+         model2$get_clusters()[[2]]$gaussian$orthogonal
+       #+end_src
+
+       #+RESULTS:
+       #+begin_example
+       initialization with a gmm model
+       cluster 0
+       In ALS algorithm : max steps number (1) reached without convergence.
+       cluster 1
+       In ALS algorithm : max steps number (1) reached without convergence.
+       em : step 0
+         lower-bound E-step (+) : -423.624
+       In ALS algorithm : max steps number (1) reached without convergence.
+       In ALS algorithm : max steps number (1) reached without convergence.
+         lower-bound M-step (-) : -434.376
+         lower-bound (+) : -434.376
+                   [,1]       [,2]
+       [1,]  0.99916563 0.04084174
+       [2,] -0.04084174 0.99916563
+                   [,1]       [,2]
+       [1,]  0.05544043 0.99846200
+       [2,] -0.99846200 0.05544043
+#+end_example
+
+       #+begin_src R :results output :session :exports both
+         model2 = hmrf_estimate(dataSet=dataSet, nGroups=K, orthogonalMaxIter=10000)
+
+         model2$get_clusters()[[1]]$gaussian$orthogonal
+         model2$get_clusters()[[2]]$gaussian$orthogonal
+       #+end_src
+
+       #+RESULTS:
+       #+begin_example
+       initialization with a gmm model
+       cluster 0
+       In ALS algorithm : max steps number (10000) reached without convergence.
+       cluster 1
+       In ALS algorithm : max steps number (10000) reached without convergence.
+       em : step 0
+         lower-bound E-step (+) : -422.777
+       In ALS algorithm : max steps number (10000) reached without convergence.
+       In ALS algorithm : max steps number (10000) reached without convergence.
+         lower-bound M-step (-) : -434.714
+         lower-bound (+) : -434.714
+                   [,1]       [,2]
+       [1,]  0.99858696 0.05314216
+       [2,] -0.05314216 0.99858696
+                    [,1]        [,2]
+       [1,]  0.007318841 0.999973217
+       [2,] -0.999973217 0.007318841
+#+end_example
+
+     - ALS implementation comparison:
+       Let's see if we get the same result with just 1 iteration:
+       #+begin_src sh :results output :exports both :session foo
+         cd ~/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/tests/unit_tests/ALS
+         export LD_LIBRARY_PATH=/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/ompmmsd/libs/$LD_LIBRARY_PATH
+         ./new_als 1
+         ./mmsd 1
+
+       #+end_src
+
+       #+RESULTS:
+       #+begin_example
+       
+       squinito@poe:~/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/tests/unit_tests/ALS$ squinito@poe:~/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/tests/unit_tests/ALS$ ============= objf =============
+          78.3332
+
+       In ALS algorithm : max steps number (1) reached without convergence.
+       ============= newD =============
+         -0.2408   0.9706
+         -0.9706  -0.2408
+       n: 2
+       n: 2
+       [
+       0.497219	0.867625	
+       -0.867625	0.497219	
+       ]
+       #+end_example
+       
+       Strange the result is quiet different.
+
+       Let's try with 2:
+       #+begin_src sh :results output :exports both :session foo
+       ./new_als 2
+       ./mmsd 2
+       #+end_src
+
+       #+RESULTS:
+       #+begin_example
+       ============= objf =============
+          78.3332
+
+       In ALS algorithm : max steps number (2) reached without convergence.
+       ============= newD =============
+         -0.2654   0.9641
+         -0.9641  -0.2654
+       n: 2
+       n: 2
+       n: 2
+       [
+       0.429011	0.903299	
+       -0.903299	0.429011	
+       ]
+       #+end_example
+
+       The solution for mmsd changed more than our solution.
+
+       We know that both implementation converges to the same results:
+       #+begin_src sh :results output :exports both :session foo
+       ./new_als 100
+       ./mmsd 100
+       #+end_src
+
+       #+RESULTS:
+       #+begin_example
+       ============= objf =============
+          78.3332
+
+       In ALS algorithm : max steps number (100) reached without convergence.
+       ============= newD =============
+         -0.2648   0.9643
+         -0.9643  -0.2648
+       n: 2
+       n: 2
+       n: 2
+       n: 2
+       n: 2
+       n: 2
+       n: 2
+       n: 2
+       n: 2
+       n: 2
+       [
+       -0.264794	0.964305	
+       -0.964305	-0.264794	
+       ]
+       #+end_example
+       
+       Which means that our implementations need less iteration to reach
+       the optimum:
+       #+begin_src sh :results output :exports both :session foo
+         ./new_als 3
+         ./mmsd 5
+       #+end_src
+
+       #+RESULTS:
+       #+begin_example
+       ============= objf =============
+          78.3332
+
+       In ALS algorithm : max steps number (3) reached without convergence.
+       ============= newD =============
+         -0.2648   0.9643
+         -0.9643  -0.2648
+       n: 2
+       n: 2
+       n: 2
+       n: 2
+       n: 2
+       n: 2
+       n: 2
+       [
+       -0.28487	0.958566	
+       -0.958566	-0.28487	
+       ]
+       #+end_example
+
+       #+begin_src sh :session foo :results output :exports both 
+         ./new_als 3
+         ./mmsd 7
+
+       #+end_src
+
+       #+RESULTS:
+       #+begin_example
+       ============= objf =============
+          78.3332
+
+       In ALS algorithm : max steps number (3) reached without convergence.
+       ============= newD =============
+         -0.2648   0.9643
+         -0.9643  -0.2648
+       n: 2
+       n: 2
+       n: 2
+       n: 2
+       n: 2
+       n: 2
+       n: 2
+       n: 2
+       n: 2
+       [
+       -0.264794	0.964305	
+       -0.964305	-0.264794	
+       ]
+      #+end_example       
+
+     - First remarks:
+       FG seems to find the solution with only 1 iteration.
+       Our implementation (full implementation of EM) doesn't give the
+       same orthogonal matrix compared to MMSD. Which is weird because
+       I compared the 2 implementations of ALS alone and they give the
+       same results. 
+       
+       Additional stuffs seems to happen to the orthogonal matrix and
+       not only column reordering.
+       
+     - What if we perform 1000 iterations? Results should be the same
+       right?
+       - ALS MMSD:
+         #+begin_src R :results output :session :exports both
+           library("ompmmsd")
+           library("Rcpp")
+
+           model1 = mmsd_estimate(dataSet=dataSet,nGroups=K,groups=clusters,iterationsNumber=1, orthogonalMethod = "S", orthogonalIterations = 1000)
+           model1$clusters[[1]]$law$Pmat
+           model1$clusters[[2]]$law$Pmat
+         #+end_src
+
+         #+RESULTS:
+         #+begin_example
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+                   [,1]       [,2]
+         [1,] 0.4142428 -0.9101664
+         [2,] 0.9101664  0.4142428
+                   [,1]       [,2]
+         [1,] 0.3958175 -0.9183292
+         [2,] 0.9183292  0.3958175
+#+end_example
+
+       - Our ALS:
+         #+begin_src R :results output :session :exports both
+           setwd("/home/squinito/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/R")
+           source("Rcpp_EM_HMRF_MMSD.R")
+           model2 = hmrf_estimate(dataSet=dataSet, nGroups=K, orthogonalMaxIter=1000)
+
+           model2$get_clusters()[[1]]$gaussian$orthogonal
+           model2$get_clusters()[[2]]$gaussian$orthogonal
+         #+end_src
+
+         #+RESULTS:
+         #+begin_example
+         initialization with a gmm model
+         cluster 0
+         In ALS algorithm : max steps number (1000) reached without convergence.
+         cluster 1
+         In ALS algorithm : max steps number (1000) reached without convergence.
+         em : step 0
+           lower-bound E-step (+) : -422.776
+         In ALS algorithm : max steps number (1000) reached without convergence.
+         In ALS algorithm : max steps number (1000) reached without convergence.
+           lower-bound M-step (-) : -435.218
+           lower-bound (+) : -435.218
+                     [,1]       [,2]
+         [1,]  0.99732638 0.07307595
+         [2,] -0.07307595 0.99732638
+                      [,1]        [,2]
+         [1,]  0.003480987 0.999993941
+         [2,] -0.999993941 0.003480987
+#+end_example
+
+       No results are still not the same.
+       
+     - About the convergence of the 2 versions:
+       - ALS MMSD:
+         #+begin_src R :results output :session :exports both
+           library("ompmmsd")
+           library("Rcpp")
+
+           model1 = mmsd_estimate(dataSet=dataSet,nGroups=K,groups=clusters,iterationsNumber=1, orthogonalMethod = "S", orthogonalIterations = 1)
+           model2 = mmsd_estimate(dataSet=dataSet,nGroups=K,groups=clusters,iterationsNumber=1, orthogonalMethod = "S", orthogonalIterations = 2)
+           model3 = mmsd_estimate(dataSet=dataSet,nGroups=K,groups=clusters,iterationsNumber=1, orthogonalMethod = "S", orthogonalIterations = 5)
+           model4 = mmsd_estimate(dataSet=dataSet,nGroups=K,groups=clusters,iterationsNumber=1, orthogonalMethod = "S", orthogonalIterations = 10)
+           model5 = mmsd_estimate(dataSet=dataSet,nGroups=K,groups=clusters,iterationsNumber=1, orthogonalMethod = "S", orthogonalIterations = 100)
+
+           print("Number of iterations : 1")
+           model1$clusters[[1]]$law$Pmat
+           model1$clusters[[2]]$law$Pmat
+
+           print("Number of iterations : 2")
+           model2$clusters[[1]]$law$Pmat
+           model2$clusters[[2]]$law$Pmat
+
+           print("Number of iterations : 5")
+           model3$clusters[[1]]$law$Pmat
+           model3$clusters[[2]]$law$Pmat
+
+           print("Number of iterations : 10")
+           model4$clusters[[1]]$law$Pmat
+           model4$clusters[[2]]$law$Pmat
+
+           print("Number of iterations : 100")
+           model5$clusters[[1]]$law$Pmat
+           model5$clusters[[2]]$law$Pmat
+         #+end_src
+
+         #+RESULTS:
+         #+begin_example
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         [1] "Number of iterations : 1"
+                   [,1]       [,2]
+         [1,] 0.4145308 -0.9100353
+         [2,] 0.9100353  0.4145308
+                   [,1]       [,2]
+         [1,] 0.3967210 -0.9179392
+         [2,] 0.9179392  0.3967210
+         [1] "Number of iterations : 2"
+                   [,1]       [,2]
+         [1,] 0.4142428 -0.9101664
+         [2,] 0.9101664  0.4142428
+                   [,1]       [,2]
+         [1,] 0.3958175 -0.9183292
+         [2,] 0.9183292  0.3958175
+         [1] "Number of iterations : 5"
+                   [,1]       [,2]
+         [1,] 0.4142428 -0.9101664
+         [2,] 0.9101664  0.4142428
+                   [,1]       [,2]
+         [1,] 0.3958175 -0.9183292
+         [2,] 0.9183292  0.3958175
+         [1] "Number of iterations : 10"
+                   [,1]       [,2]
+         [1,] 0.4142428 -0.9101664
+         [2,] 0.9101664  0.4142428
+                   [,1]       [,2]
+         [1,] 0.3958175 -0.9183292
+         [2,] 0.9183292  0.3958175
+         [1] "Number of iterations : 100"
+                   [,1]       [,2]
+         [1,] 0.4142428 -0.9101664
+         [2,] 0.9101664  0.4142428
+                   [,1]       [,2]
+         [1,] 0.3958175 -0.9183292
+         [2,] 0.9183292  0.3958175
+         #+end_example
+         
+         The MMSD version seems to converge before the 10th iteration.
+         
+       - Our ALS:
+         #+begin_src R :results output :session :exports both
+           setwd("/home/squinito/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/R")
+           source("Rcpp_EM_HMRF_MMSD.R")
+           model1 = hmrf_estimate(dataSet=dataSet, nGroups=K, orthogonalMaxIter=1)
+           model2 = hmrf_estimate(dataSet=dataSet, nGroups=K, orthogonalMaxIter=2)
+           model3 = hmrf_estimate(dataSet=dataSet, nGroups=K, orthogonalMaxIter=5)
+           model4 = hmrf_estimate(dataSet=dataSet, nGroups=K, orthogonalMaxIter=10)
+           model5 = hmrf_estimate(dataSet=dataSet, nGroups=K, orthogonalMaxIter=100)
+           model6 = hmrf_estimate(dataSet=dataSet, nGroups=K, orthogonalMaxIter=1000)
+
+           print("Number of iterations : 1")
+           model1$get_clusters()[[1]]$gaussian$orthogonal
+           model1$get_clusters()[[2]]$gaussian$orthogonal
+
+           print("Number of iterations : 2")
+           model2$get_clusters()[[1]]$gaussian$orthogonal
+           model2$get_clusters()[[2]]$gaussian$orthogonal
+
+           print("Number of iterations : 5")
+           model3$get_clusters()[[1]]$gaussian$orthogonal
+           model3$get_clusters()[[2]]$gaussian$orthogonal
+
+           print("Number of iterations : 10")
+           model4$get_clusters()[[1]]$gaussian$orthogonal
+           model4$get_clusters()[[2]]$gaussian$orthogonal
+
+           print("Number of iterations : 100")
+           model5$get_clusters()[[1]]$gaussian$orthogonal
+           model5$get_clusters()[[2]]$gaussian$orthogonal
+
+           print("Number of iterations : 1000")
+           model6$get_clusters()[[1]]$gaussian$orthogonal
+           model6$get_clusters()[[2]]$gaussian$orthogonal
+
+         #+end_src
+
+         #+RESULTS:
+         #+begin_example
+         initialization with a gmm model
+         cluster 0
+         In ALS algorithm : max steps number (1) reached without convergence.
+         cluster 1
+         In ALS algorithm : max steps number (1) reached without convergence.
+         em : step 0
+           lower-bound E-step (+) : -423.624
+         In ALS algorithm : max steps number (1) reached without convergence.
+         In ALS algorithm : max steps number (1) reached without convergence.
+           lower-bound M-step (-) : -434.376
+           lower-bound (+) : -434.376
+         initialization with a gmm model
+         cluster 0
+         In ALS algorithm : max steps number (2) reached without convergence.
+         cluster 1
+         In ALS algorithm : max steps number (2) reached without convergence.
+         em : step 0
+           lower-bound E-step (+) : -422.82
+         In ALS algorithm : max steps number (2) reached without convergence.
+         In ALS algorithm : max steps number (2) reached without convergence.
+           lower-bound M-step (-) : -434.676
+           lower-bound (+) : -434.676
+         initialization with a gmm model
+         cluster 0
+         In ALS algorithm : max steps number (5) reached without convergence.
+         cluster 1
+         In ALS algorithm : max steps number (5) reached without convergence.
+         em : step 0
+           lower-bound E-step (+) : -422.775
+         In ALS algorithm : max steps number (5) reached without convergence.
+         In ALS algorithm : max steps number (5) reached without convergence.
+           lower-bound M-step (-) : -435.164
+           lower-bound (+) : -435.164
+         initialization with a gmm model
+         cluster 0
+         In ALS algorithm : max steps number (10) reached without convergence.
+         cluster 1
+         In ALS algorithm : max steps number (10) reached without convergence.
+         em : step 0
+           lower-bound E-step (+) : -422.776
+         In ALS algorithm : max steps number (10) reached without convergence.
+         In ALS algorithm : max steps number (10) reached without convergence.
+           lower-bound M-step (-) : -435.292
+           lower-bound (+) : -435.292
+         initialization with a gmm model
+         cluster 0
+         In ALS algorithm : max steps number (100) reached without convergence.
+         cluster 1
+         In ALS algorithm : max steps number (100) reached without convergence.
+         em : step 0
+           lower-bound E-step (+) : -422.776
+         In ALS algorithm : max steps number (100) reached without convergence.
+         In ALS algorithm : max steps number (100) reached without convergence.
+           lower-bound M-step (-) : -435.18
+           lower-bound (+) : -435.18
+         initialization with a gmm model
+         cluster 0
+         In ALS algorithm : max steps number (1000) reached without convergence.
+         cluster 1
+         In ALS algorithm : max steps number (1000) reached without convergence.
+         em : step 0
+           lower-bound E-step (+) : -422.776
+         In ALS algorithm : max steps number (1000) reached without convergence.
+         In ALS algorithm : max steps number (1000) reached without convergence.
+           lower-bound M-step (-) : -435.185
+           lower-bound (+) : -435.185
+         [1] "Number of iterations : 1"
+                     [,1]       [,2]
+         [1,]  0.99916563 0.04084174
+         [2,] -0.04084174 0.99916563
+                     [,1]       [,2]
+         [1,]  0.05544043 0.99846200
+         [2,] -0.99846200 0.05544043
+         [1] "Number of iterations : 2"
+                     [,1]       [,2]
+         [1,]  0.99862062 0.05250579
+         [2,] -0.05250579 0.99862062
+                     [,1]       [,2]
+         [1,]  0.01372009 0.99990588
+         [2,] -0.99990588 0.01372009
+         [1] "Number of iterations : 5"
+                     [,1]       [,2]
+         [1,]  0.99835611 0.05731555
+         [2,] -0.05731555 0.99835611
+                      [,1]        [,2]
+         [1,]  0.003598086 0.999993527
+         [2,] -0.999993527 0.003598086
+         [1] "Number of iterations : 10"
+                     [,1]       [,2]
+         [1,]  0.99973072 0.02320551
+         [2,] -0.02320551 0.99973072
+                      [,1]        [,2]
+         [1,]  0.003485616 0.999993925
+         [2,] -0.999993925 0.003485616
+         [1] "Number of iterations : 100"
+                     [,1]       [,2]
+         [1,]  0.99851871 0.05440946
+         [2,] -0.05440946 0.99851871
+                     [,1]       [,2]
+         [1,]  0.00345842 0.99999402
+         [2,] -0.99999402 0.00345842
+         [1] "Number of iterations : 1000"
+                    [,1]      [,2]
+         [1,]  0.9983459 0.0574925
+         [2,] -0.0574925 0.9983459
+                      [,1]        [,2]
+         [1,]  0.003485546 0.999993925
+         [2,] -0.999993925 0.003485546
+         #+end_example
+
+         Even with the number of iterations set to 1000 our
+         implementation does not converge.
+
+         As seen previously if we consider only the 2 ALS
+         implementations, they seem to converge rather quickly to the
+         same results (ours requiring less iterations, about
+         5). However in our case, we still have the message that ALS
+         did not converge even after 1000 iterations:         
+         #+begin_src sh :results output :exports both  :session foo
+           cd ~/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/tests/unit_tests/ALS
+           export LD_LIBRARY_PATH=/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/ompmmsd/libs/$LD_LIBRARY_PATH
+           ./new_als 1000
+         #+end_src
+
+         #+RESULTS:
+         : 
+         : squinito@poe:~/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/tests/unit_tests/ALS$ ============= objf =============
+         : 78.33324
+         : In ALS algorithm : max steps number (1000) reached without convergence.
+         : ============= newD =============
+         : -0.2647937 0.9643051
+         : -0.9643051 -0.2647937
+
+         At 10K iterations we still don't converge but the orthogonal
+         mat is completely different:
+         #+begin_src sh :results output :exports both :session foo
+           ./new_als 10000
+         #+end_src
+
+         #+RESULTS:
+         : ============= objf =============
+         : 78.33324
+         : In ALS algorithm : max steps number (10000) reached without convergence.
+         : ============= newD =============
+         : -0.7071068 0.7071068
+         : -0.7071068 -0.7071068
+         
+         Surprisingly if we try the same thing with mmsd version we
+         got also another results:
+         #+begin_src sh :results output :exports both :session foo
+           ./mmsd 1000000000000000000
+         #+end_src
+
+         #+RESULTS:
+         : n: 2
+         : [
+         : 0.525322	0.850904	
+         : -0.850904	0.525322	
+         : ]
+
+     - [X] If the version I am testing as the last Alexis's
+       modifications:
+       Created a new branch =ALS_correction3= to merge with the branch
+       =Alexis=.
+       We still have the same problem...
+
+       - ALS MMSD:
+         #+begin_src R :results output :session :exports both
+           library("ompmmsd")
+           library("Rcpp")
+
+           model1 = mmsd_estimate(dataSet=dataSet,nGroups=K,groups=clusters,iterationsNumber=1, orthogonalMethod = "S", orthogonalIterations = 1)
+           model2 = mmsd_estimate(dataSet=dataSet,nGroups=K,groups=clusters,iterationsNumber=1, orthogonalMethod = "S", orthogonalIterations = 2)
+           model3 = mmsd_estimate(dataSet=dataSet,nGroups=K,groups=clusters,iterationsNumber=1, orthogonalMethod = "S", orthogonalIterations = 5)
+           model4 = mmsd_estimate(dataSet=dataSet,nGroups=K,groups=clusters,iterationsNumber=1, orthogonalMethod = "S", orthogonalIterations = 10)
+           model5 = mmsd_estimate(dataSet=dataSet,nGroups=K,groups=clusters,iterationsNumber=1, orthogonalMethod = "S", orthogonalIterations = 100)
+
+           print("Number of iterations : 1")
+           model1$clusters[[1]]$law$Pmat
+           model1$clusters[[2]]$law$Pmat
+
+           print("Number of iterations : 2")
+           model2$clusters[[1]]$law$Pmat
+           model2$clusters[[2]]$law$Pmat
+
+           print("Number of iterations : 5")
+           model3$clusters[[1]]$law$Pmat
+           model3$clusters[[2]]$law$Pmat
+
+           print("Number of iterations : 10")
+           model4$clusters[[1]]$law$Pmat
+           model4$clusters[[2]]$law$Pmat
+
+           print("Number of iterations : 100")
+           model5$clusters[[1]]$law$Pmat
+           model5$clusters[[2]]$law$Pmat
+         #+end_src
+
+         #+RESULTS:
+         #+begin_example
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         n: 2
+         [1] "Number of iterations : 1"
+                   [,1]       [,2]
+         [1,] 0.4145308 -0.9100353
+         [2,] 0.9100353  0.4145308
+                   [,1]       [,2]
+         [1,] 0.3967210 -0.9179392
+         [2,] 0.9179392  0.3967210
+         [1] "Number of iterations : 2"
+                   [,1]       [,2]
+         [1,] 0.4142428 -0.9101664
+         [2,] 0.9101664  0.4142428
+                   [,1]       [,2]
+         [1,] 0.3958175 -0.9183292
+         [2,] 0.9183292  0.3958175
+         [1] "Number of iterations : 5"
+                   [,1]       [,2]
+         [1,] 0.4142428 -0.9101664
+         [2,] 0.9101664  0.4142428
+                   [,1]       [,2]
+         [1,] 0.3958175 -0.9183292
+         [2,] 0.9183292  0.3958175
+         [1] "Number of iterations : 10"
+                   [,1]       [,2]
+         [1,] 0.4142428 -0.9101664
+         [2,] 0.9101664  0.4142428
+                   [,1]       [,2]
+         [1,] 0.3958175 -0.9183292
+         [2,] 0.9183292  0.3958175
+         [1] "Number of iterations : 100"
+                   [,1]       [,2]
+         [1,] 0.4142428 -0.9101664
+         [2,] 0.9101664  0.4142428
+                   [,1]       [,2]
+         [1,] 0.3958175 -0.9183292
+         [2,] 0.9183292  0.3958175
+#+end_example
+
+         The MMSD version seems to converge before the 10th iteration.
+         
+       - Our ALS:
+         #+begin_src R :results output :session :exports both
+           setwd("/home/squinito/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/R")
+           source("Rcpp_EM_HMRF_MMSD.R")
+           model1 = hmrf_estimate(dataSet=dataSet, nGroups=K, orthogonalMaxIter=1)
+           model2 = hmrf_estimate(dataSet=dataSet, nGroups=K, orthogonalMaxIter=2)
+           model3 = hmrf_estimate(dataSet=dataSet, nGroups=K, orthogonalMaxIter=5)
+           model4 = hmrf_estimate(dataSet=dataSet, nGroups=K, orthogonalMaxIter=10)
+           model5 = hmrf_estimate(dataSet=dataSet, nGroups=K, orthogonalMaxIter=100)
+           model6 = hmrf_estimate(dataSet=dataSet, nGroups=K, orthogonalMaxIter=1000)
+
+           print("Number of iterations : 1")
+           model1$get_clusters()[[1]]$gaussian$orthogonal
+           model1$get_clusters()[[2]]$gaussian$orthogonal
+
+           print("Number of iterations : 2")
+           model2$get_clusters()[[1]]$gaussian$orthogonal
+           model2$get_clusters()[[2]]$gaussian$orthogonal
+
+           print("Number of iterations : 5")
+           model3$get_clusters()[[1]]$gaussian$orthogonal
+           model3$get_clusters()[[2]]$gaussian$orthogonal
+
+           print("Number of iterations : 10")
+           model4$get_clusters()[[1]]$gaussian$orthogonal
+           model4$get_clusters()[[2]]$gaussian$orthogonal
+
+           print("Number of iterations : 100")
+           model5$get_clusters()[[1]]$gaussian$orthogonal
+           model5$get_clusters()[[2]]$gaussian$orthogonal
+
+           print("Number of iterations : 1000")
+           model6$get_clusters()[[1]]$gaussian$orthogonal
+           model6$get_clusters()[[2]]$gaussian$orthogonal
+
+         #+end_src
+
+         #+RESULTS:
+         #+begin_example
+         initialization with a gmm model
+         cluster 0
+         In ALS algorithm : max steps number (1) reached without convergence.
+         cluster 1
+         In ALS algorithm : max steps number (1) reached without convergence.
+         em : step 0
+           lower-bound E-step (+) : -423.624
+         In ALS algorithm : max steps number (1) reached without convergence.
+         In ALS algorithm : max steps number (1) reached without convergence.
+           lower-bound M-step (-) : -434.376
+           lower-bound (+) : -434.376
+         initialization with a gmm model
+         cluster 0
+         In ALS algorithm : max steps number (2) reached without convergence.
+         cluster 1
+         In ALS algorithm : max steps number (2) reached without convergence.
+         em : step 0
+           lower-bound E-step (+) : -422.82
+         In ALS algorithm : max steps number (2) reached without convergence.
+         In ALS algorithm : max steps number (2) reached without convergence.
+           lower-bound M-step (-) : -434.676
+           lower-bound (+) : -434.676
+         initialization with a gmm model
+         cluster 0
+         In ALS algorithm : max steps number (5) reached without convergence.
+         cluster 1
+         In ALS algorithm : max steps number (5) reached without convergence.
+         em : step 0
+           lower-bound E-step (+) : -422.775
+         In ALS algorithm : max steps number (5) reached without convergence.
+         In ALS algorithm : max steps number (5) reached without convergence.
+           lower-bound M-step (-) : -435.164
+           lower-bound (+) : -435.164
+         initialization with a gmm model
+         cluster 0
+         In ALS algorithm : max steps number (10) reached without convergence.
+         cluster 1
+         In ALS algorithm : max steps number (10) reached without convergence.
+         em : step 0
+           lower-bound E-step (+) : -422.776
+         In ALS algorithm : max steps number (10) reached without convergence.
+         In ALS algorithm : max steps number (10) reached without convergence.
+           lower-bound M-step (-) : -435.176
+           lower-bound (+) : -435.176
+         initialization with a gmm model
+         cluster 0
+         In ALS algorithm : max steps number (100) reached without convergence.
+         cluster 1
+         In ALS algorithm : max steps number (100) reached without convergence.
+         em : step 0
+           lower-bound E-step (+) : -422.776
+         In ALS algorithm : max steps number (100) reached without convergence.
+         In ALS algorithm : max steps number (100) reached without convergence.
+           lower-bound M-step (-) : -434.99
+           lower-bound (+) : -434.99
+         initialization with a gmm model
+         cluster 0
+         In ALS algorithm : max steps number (1000) reached without convergence.
+         cluster 1
+         In ALS algorithm : max steps number (1000) reached without convergence.
+         em : step 0
+           lower-bound E-step (+) : -422.779
+         In ALS algorithm : max steps number (1000) reached without convergence.
+         In ALS algorithm : max steps number (1000) reached without convergence.
+           lower-bound M-step (-) : -434.44
+           lower-bound (+) : -434.44
+         [1] "Number of iterations : 1"
+                     [,1]       [,2]
+         [1,]  0.99916563 0.04084174
+         [2,] -0.04084174 0.99916563
+                     [,1]       [,2]
+         [1,]  0.05544043 0.99846200
+         [2,] -0.99846200 0.05544043
+         [1] "Number of iterations : 2"
+                     [,1]       [,2]
+         [1,]  0.99862062 0.05250579
+         [2,] -0.05250579 0.99862062
+                     [,1]       [,2]
+         [1,]  0.01372009 0.99990588
+         [2,] -0.99990588 0.01372009
+         [1] "Number of iterations : 5"
+                     [,1]       [,2]
+         [1,]  0.99835611 0.05731555
+         [2,] -0.05731555 0.99835611
+                      [,1]        [,2]
+         [1,]  0.003598086 0.999993527
+         [2,] -0.999993527 0.003598086
+         [1] "Number of iterations : 10"
+                     [,1]       [,2]
+         [1,]  0.99811086 0.06143874
+         [2,] -0.06143874 0.99811086
+                      [,1]        [,2]
+         [1,]  0.003485616 0.999993925
+         [2,] -0.999993925 0.003485616
+         [1] "Number of iterations : 100"
+                     [,1]       [,2]
+         [1,]  0.99844425 0.05575905
+         [2,] -0.05575905 0.99844425
+                       [,1]          [,2]
+         [1,] -0.0003719295  0.9999999308
+         [2,] -0.9999999308 -0.0003719295
+         [1] "Number of iterations : 1000"
+                     [,1]       [,2]
+         [1,]  0.99868619 0.05124348
+         [2,] -0.05124348 0.99868619
+                      [,1]        [,2]
+         [1,]  0.003484767 0.999993928
+         [2,] -0.999993928 0.003484767
+#+end_example
+
 * Emacs Setup 							   :noexport:
   This document has local variables in its postembule, which should
   allow Org-mode to work seamlessly without any setup. If you're
