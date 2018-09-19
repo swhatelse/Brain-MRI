@@ -154,7 +154,7 @@
   #+end_src
 
   #+RESULTS:
-  [[file:/tmp/babel-4466iEw/figure4466Uly.png]]
+  [[file:/tmp/babel-62001a5/figure62009pp.png]]
 ** Multiple Scale T-distribution
    A MST is an infinite mixture of Gaussian associated with a gamma
    distribution.

@@ -1,4 +1,4 @@
-#+TAGS: noexport(n) software(s) Alexis(a) Florence(f) deprecated(d) EM(e) HMM(h) MMST(m) R(r) C(c) Bug(b) Optimization(o) Profiling(P)
+#+TAGS: noexport(n) software(s) Alexis(a) Florence(f) deprecated(d) EM(e) HMM(h) MMST(m) R(r) C(c) Bug(b) Optimization(o) Profiling(P) Performance
 
 #+Title: Journal
 #+AUTHOR:      Steven QUINITO MASNADA
@@ -1445,6 +1445,12 @@ seq_time / tot_par
        Find the right level of abstraction \to close to what statisticians
        are used to manipulate (e.g. distribution, random variables,
        etc...)
+       - model
+       - random variable
+       - finite distribution 
+       - infinite distribution
+       - cluster
+
 ** August
 *** 2018-08-09
 **** Trying to understand behavior of the lowerbound
@@ -2115,7 +2121,7 @@ seq_time / tot_par
          : -0.850904	0.525322	
          : ]
 
-     - [X] If the version I am testing as the last Alexis's
+     - [X] Check if the version I am testing has the last Alexis's
        modifications:
        Created a new branch =ALS_correction3= to merge with the branch
        =Alexis=.
@@ -2386,6 +2392,208 @@ seq_time / tot_par
          [1,]  0.003484767 0.999993928
          [2,] -0.999993928 0.003484767
 #+end_example
+
+** September
+*** 2018-09-17
+**** TODO Presentation GIN 
+     DEADLINE: <2018-09-25 mar.>
+***** Current state of the code
+       - Pipeline
+         1. input \to MRI map
+         2. Build healthy model \to c++
+         3. Discriminate abnormal cells
+         4. Build abnormality model \to c++
+         5. Build tumor signatures
+       - Software stack
+         Bash \to R \to R \to R \to ... \to C++
+       - 3 distinct versions (duplicated code):
+         - MMSD (Stephane Despreaux)
+           fast but code too complex for non-informatician.
+         - Bayesian
+         - Markovian (correct version) with some optimizations
+           To accommodate with the complexity of human data
+       - 3 languages:
+         - C++ \to heavy processing 
+         - R \to light processing
+         - Bash \to running the whole pipeline
+       - Parallel
+       - TUI \to pass input to script with options (a lot)
+       - (Detail of the pipeline)
+
+       - Tried cuda
+       - interest of armadillo
+       - right now working on code architecture
+***** Known issues
+       - Script not very easy to use
+         - not friendly UI
+         - not so easy to install
+         - Bash \to archaic
+       - Scaling
+         - Slowness
+           - Should take at least 2.5 years to run with Veronica's data
+         - Memory consumption:
+           - R crashes complaining about using too much memory.
+             # - data no more loaded directly in R
+             # - data loaded "on the fly"
+       - Sparse developer documentation
+       - Lack of real user manual
+
+***** Future of the code
+       - Git orginization
+       - more detail about code structure 
+       - Reorganizing the code \to improved code architecture:
+         - more robust code
+         - easier to extends (for model should only need to add formulas)
+         - merge existing versions \to only 1 versions
+         - Gives more flexibility in model selections (possible to
+           define a type of distribution per cluster )
+         - Core part of the code should be a library for
+           classification that can operate with any languages
+       - Memory consumption:
+         - problem with R garbage collector
+         - stop loading the entire data set directly \to load part on
+           the fly
+         - minibatch approach ?
+
+       - Performances:
+         - Cluster \to MPI
+         - GPU \to CUDA/ OPENCL
+         - CPU optimization \to Parallelized + vectorized
+       - Pipeline and light processing might be rewritten in python
+       - Computational part might be re-written in Julia
+       - Documentation for user and developer
+
+*** 2018-09-18
+**** Efficiency of armadillo                                    :Performance:
+     Lets see if armadillo correctly use vectorization
+     #+BEGIN_SRC C++ :tangle /tmp/kernel.cpp
+       #include "/scratch/squinito/Tools/armadillo-code/lib/include/armadillo" 
+       #include "/scratch/squinito/Tools/petk/include/petk.h"
+
+       #define NUM_EVENT 15
+
+       #define N 1024 * 8
+
+       using namespace arma; 
+
+       inline void kernel(const fmat& A, const fmat& B, fmat& C){
+           C = A + B;
+       }
+
+       int main(){
+                     
+           fmat A = randu<fmat>(N,N);
+           fmat B = randu<fmat>(N,N);
+           fmat C = zeros<fmat>(N,N);
+
+           char *events[] = {
+               "PAPI_BR_CN",
+               "PAPI_BR_TKN",
+               "L1-DCACHE-LOADS",
+               "L1-DCACHE-STORES",
+               "MEM_INST_RETIRED:ALL_LOADS",
+               "MEM_INST_RETIRED:ALL_STORES",
+               "MISALIGN_MEM_REF:LOADS",
+               "MISALIGN_MEM_REF:STORES",
+               "FP_ARITH:128B_PACKED_SINGLE",
+               "FP_ARITH:256B_PACKED_SINGLE",
+               "FP_ARITH:SCALAR_SINGLE",
+               "PAPI_VEC_SP",
+               "PAPI_TOT_CYC",
+               "BR_INST_RETIRED",
+               "BRANCH_INSTRUCTIONS_RETIRED"
+           };
+                     
+           init_papi(events, NUM_EVENT);
+           
+           start_papi();
+
+           kernel(A,B,C);
+           
+           stop_papi();
+
+           std::cout << C[0] << std::endl; 
+           
+           print_papi_counters(events);
+
+           terminate_papi(events);
+       }
+     #+END_SRC
+
+     #+begin_src sh :results output :exports both
+       cd /tmp
+       CXX=g++
+       CFLAGS="-std=c++11 -O3 -march=native -DARMA_DONT_USE_WRAPPER"
+       INCLUDES="-I/scratch/squinito/Tools/petk/include -I/scratch/squinito/Tools/armadillo-code/include"
+       LDFLAGS="-L/scratch/squinito/Tools/petk/lib -L/scratch/squinito/Tools/armadillo-code/lib/lib -L/scratch/squinito/Tools/OpenBLAS/bin/lib -lmeasure -larmadillo -lopenblas"
+       SRC=kernel.cpp
+
+       $CXX $CFLAGS $INCLUDES $SRC -o kernel_vec $LDFLAGS
+
+       $CXX $CFLAGS -fno-tree-vectorize $INCLUDES $SRC -o kernel_novec $LDFLAGS
+
+       $CXX $CFLAGS -DARMA_NO_DEBUG $INCLUDES $SRC -o kernel_nodebug $LDFLAGS
+     #+end_src
+
+     #+RESULTS:
+
+     #+begin_src sh :results output :exports both
+       LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/scratch/squinito/Tools/petk/lib /tmp/kernel_vec
+     #+end_src
+
+     #+RESULTS:
+     #+begin_example
+     1.79029
+     PAPI_BR_CN: 			7346215
+     PAPI_BR_TKN: 			7343254
+     L1-DCACHE-LOADS: 			30775914
+     L1-DCACHE-STORES: 			15814483
+     MEM_INST_RETIRED:ALL_LOADS: 			32952823
+     MEM_INST_RETIRED:ALL_STORES: 			17064652
+     MISALIGN_MEM_REF:LOADS: 			0
+     MISALIGN_MEM_REF:STORES: 			0
+     FP_ARITH:128B_PACKED_SINGLE: 			0
+     FP_ARITH:256B_PACKED_SINGLE: 			8626378
+     FP_ARITH:SCALAR_SINGLE: 			0
+     PAPI_VEC_SP: 			8626378
+     PAPI_TOT_CYC: 			129903438
+     BR_INST_RETIRED: 			8512472
+     BRANCH_INSTRUCTIONS_RETIRED: 			8576168
+
+#+end_example
+
+     #+begin_src sh :results output :exports both
+       LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/scratch/squinito/Tools/petk/lib /tmp/kernel_novec
+     #+end_src
+
+     #+RESULTS:
+     #+begin_example
+     1.79029
+     PAPI_BR_CN: 			33257103
+     PAPI_BR_TKN: 			33252898
+     L1-DCACHE-LOADS: 			133788811
+     L1-DCACHE-STORES: 			66948163
+     MEM_INST_RETIRED:ALL_LOADS: 			134128801
+     MEM_INST_RETIRED:ALL_STORES: 			67084943
+     MISALIGN_MEM_REF:LOADS: 			0
+     MISALIGN_MEM_REF:STORES: 			0
+     FP_ARITH:128B_PACKED_SINGLE: 			0
+     FP_ARITH:256B_PACKED_SINGLE: 			0
+     FP_ARITH:SCALAR_SINGLE: 			67031023
+     PAPI_VEC_SP: 			67031023
+     PAPI_TOT_CYC: 			175583365
+     BR_INST_RETIRED: 			33539388
+     BRANCH_INSTRUCTIONS_RETIRED: 			33537021
+
+#+end_example
+
+     It seems it used avx instructions as it was supposed to:
+     #+begin_src R :results output :session :exports both
+     66970541 / 8032008
+     #+end_src
+
+     #+RESULTS:
+     : [1] 8.337957
 
 * Emacs Setup 							   :noexport:
   This document has local variables in its postembule, which should
