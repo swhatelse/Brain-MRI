@@ -2397,32 +2397,43 @@ seq_time / tot_par
 *** 2018-09-17
 **** TODO Presentation GIN 
      DEADLINE: <2018-09-25 mar.>
-***** Current state of the code
+***** Introduction
        - Pipeline
          1. input \to MRI map
          2. Build healthy model \to c++
-         3. Discriminate abnormal cells
+         3. Discriminate abnormal cells R
          4. Build abnormality model \to c++
-         5. Build tumor signatures
+         5. Build tumor signatures R
        - Software stack
-         Bash \to R \to R \to R \to ... \to C++
+         - 3 languages:
+           - C++ \to heavy processing 
+           - R \to light processing
+           - Bash \to running the whole pipeline
+         - Bash \to R \to R \to R \to ... \to C++
        - 3 distinct versions (duplicated code):
          - MMSD (Stephane Despreaux)
            fast but code too complex for non-informatician.
+           Custom "wrapper" for linear algebra libraries
          - Bayesian
+           using armadillo
          - Markovian (correct version) with some optimizations
            To accommodate with the complexity of human data
-       - 3 languages:
-         - C++ \to heavy processing 
-         - R \to light processing
-         - Bash \to running the whole pipeline
+           using armadillo
+         - Mainly linear algebra operations
+           Armadillo c++ linear algebra library easy to use 
+***** Current state of the code
        - Parallel
        - TUI \to pass input to script with options (a lot)
        - (Detail of the pipeline)
+         
+       - Performances
+         - Bottlenecks \to optimization functions \to ALS
+         - interest of armadillo \to easy to write/read but is it the
+           real bottleneck.
+         - Tried cuda
 
-       - Tried cuda
-       - interest of armadillo
        - right now working on code architecture
+
 ***** Known issues
        - Script not very easy to use
          - not friendly UI
@@ -2430,7 +2441,9 @@ seq_time / tot_par
          - Bash \to archaic
        - Scaling
          - Slowness
-           - Should take at least 2.5 years to run with Veronica's data
+           - Should take at least 2.5 years to run with Veronica's
+             data
+           - MMSD faster but code more complex
          - Memory consumption:
            - R crashes complaining about using too much memory.
              # - data no more loaded directly in R
@@ -2439,8 +2452,12 @@ seq_time / tot_par
        - Lack of real user manual
 
 ***** Future of the code
+       - check points restart
        - Git orginization
-       - more detail about code structure 
+         - c++ lib
+         - python , R packages
+         - code for rats
+       - give more detail about code structure 
        - Reorganizing the code \to improved code architecture:
          - more robust code
          - easier to extends (for model should only need to add formulas)
@@ -2467,6 +2484,7 @@ seq_time / tot_par
 **** Efficiency of armadillo                                    :Performance:
      Lets see if armadillo correctly use vectorization
      #+BEGIN_SRC C++ :tangle /tmp/kernel.cpp
+       #include <stdlib.h>
        #include "/scratch/squinito/Tools/armadillo-code/lib/include/armadillo" 
        #include "/scratch/squinito/Tools/petk/include/petk.h"
 
@@ -2480,11 +2498,16 @@ seq_time / tot_par
            C = A + B;
        }
 
-       int main(){
-                     
-           fmat A = randu<fmat>(N,N);
-           fmat B = randu<fmat>(N,N);
-           fmat C = zeros<fmat>(N,N);
+       int main(int argc, char** argv){
+           
+           int n = N;
+
+           if(argc > 1)
+               n = atoi(argv[1]);
+
+           fmat A = randu<fmat>(n,n);
+           fmat B = randu<fmat>(n,n);
+           fmat C = zeros<fmat>(n,n);
 
            char *events[] = {
                "PAPI_BR_CN",
@@ -2538,52 +2561,52 @@ seq_time / tot_par
      #+RESULTS:
 
      #+begin_src sh :results output :exports both
-       LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/scratch/squinito/Tools/petk/lib /tmp/kernel_vec
+       LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/scratch/squinito/Tools/petk/lib /tmp/kernel_vec 8192
      #+end_src
 
      #+RESULTS:
      #+begin_example
      1.79029
-     PAPI_BR_CN: 			7346215
-     PAPI_BR_TKN: 			7343254
-     L1-DCACHE-LOADS: 			30775914
-     L1-DCACHE-STORES: 			15814483
-     MEM_INST_RETIRED:ALL_LOADS: 			32952823
-     MEM_INST_RETIRED:ALL_STORES: 			17064652
+     PAPI_BR_CN: 			7981671
+     PAPI_BR_TKN: 			7976149
+     L1-DCACHE-LOADS: 			33796663
+     L1-DCACHE-STORES: 			16967977
+     MEM_INST_RETIRED:ALL_LOADS: 			33838416
+     MEM_INST_RETIRED:ALL_STORES: 			16917536
      MISALIGN_MEM_REF:LOADS: 			0
      MISALIGN_MEM_REF:STORES: 			0
      FP_ARITH:128B_PACKED_SINGLE: 			0
-     FP_ARITH:256B_PACKED_SINGLE: 			8626378
+     FP_ARITH:256B_PACKED_SINGLE: 			8318190
      FP_ARITH:SCALAR_SINGLE: 			0
-     PAPI_VEC_SP: 			8626378
-     PAPI_TOT_CYC: 			129903438
-     BR_INST_RETIRED: 			8512472
-     BRANCH_INSTRUCTIONS_RETIRED: 			8576168
+     PAPI_VEC_SP: 			8318190
+     PAPI_TOT_CYC: 			125400393
+     BR_INST_RETIRED: 			8320244
+     BRANCH_INSTRUCTIONS_RETIRED: 			8312280
 
 #+end_example
 
      #+begin_src sh :results output :exports both
-       LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/scratch/squinito/Tools/petk/lib /tmp/kernel_novec
+       LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/scratch/squinito/Tools/petk/lib /tmp/kernel_novec 8192
      #+end_src
 
      #+RESULTS:
      #+begin_example
      1.79029
-     PAPI_BR_CN: 			33257103
-     PAPI_BR_TKN: 			33252898
-     L1-DCACHE-LOADS: 			133788811
-     L1-DCACHE-STORES: 			66948163
-     MEM_INST_RETIRED:ALL_LOADS: 			134128801
-     MEM_INST_RETIRED:ALL_STORES: 			67084943
+     PAPI_BR_CN: 			33314100
+     PAPI_BR_TKN: 			33308185
+     L1-DCACHE-LOADS: 			133665770
+     L1-DCACHE-STORES: 			66999188
+     MEM_INST_RETIRED:ALL_LOADS: 			133982957
+     MEM_INST_RETIRED:ALL_STORES: 			67052908
      MISALIGN_MEM_REF:LOADS: 			0
      MISALIGN_MEM_REF:STORES: 			0
      FP_ARITH:128B_PACKED_SINGLE: 			0
      FP_ARITH:256B_PACKED_SINGLE: 			0
-     FP_ARITH:SCALAR_SINGLE: 			67031023
-     PAPI_VEC_SP: 			67031023
-     PAPI_TOT_CYC: 			175583365
-     BR_INST_RETIRED: 			33539388
-     BRANCH_INSTRUCTIONS_RETIRED: 			33537021
+     FP_ARITH:SCALAR_SINGLE: 			67095210
+     PAPI_VEC_SP: 			67095210
+     PAPI_TOT_CYC: 			175476463
+     BR_INST_RETIRED: 			33555046
+     BRANCH_INSTRUCTIONS_RETIRED: 			33447972
 
 #+end_example
 
@@ -2594,6 +2617,71 @@ seq_time / tot_par
 
      #+RESULTS:
      : [1] 8.337957
+
+*** 2018-09-20
+**** TODO Bug in neighbourhood
+     SCHEDULED: <2018-09-26 mer.>
+     On simple cases the neighbourhood seems ok but with rats brain in
+     some cases it is not working correctly.
+*** 2018-09-21
+**** Comparison armadillo vs MMSD
+     Number of MRI dimension: 5
+     #+begin_src sh :results output :exports both
+     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/scratch/squinito/Tools/OpenBLAS/bin/lib:/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/ompmmsd/libs:/scratch/squinito/Tools/googletest/googletest/build:/scratch/squinito/Tools/armadillo-code/lib/lib:/usr/local/cuda-8.0/lib64:/scratch/squinito/Tools/petk/lib:/scratch/squinito/Tools/cuDNN/lib64:
+     OMP_NUM_THREADS=1 ~/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/tests/performances/time_measures/kernels/ALS/ugrad/papi_mmsd
+
+     OMP_NUM_THREADS=1 ~/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/tests/performances/time_measures/kernels/ALS/ugrad/papi_ours
+     #+end_src
+
+     #+RESULTS:
+     #+begin_example
+     n: 5
+     PAPI_BR_CN: 			238386788
+     PAPI_BR_TKN: 			141005082
+     MEM_INST_RETIRED:ALL_LOADS: 			777526078
+     MEM_INST_RETIRED:ALL_STORES: 			296730534
+     FP_ARITH:128B_PACKED_DOUBLE: 			53
+     FP_ARITH:256B_PACKED_DOUBLE: 			2642016
+     FP_ARITH:SCALAR_DOUBLE: 			525173559
+     PAPI_VEC_SP: 			0
+     PAPI_TOT_CYC: 			1964053667
+     BR_INST_RETIRED: 			333832841
+     BRANCH_INSTRUCTIONS_RETIRED: 			343394079
+
+     PAPI_BR_CN: 			573536704
+     PAPI_BR_TKN: 			229302156
+     MEM_INST_RETIRED:ALL_LOADS: 			1179642173
+     MEM_INST_RETIRED:ALL_STORES: 			738292658
+     FP_ARITH:128B_PACKED_DOUBLE: 			0
+     FP_ARITH:256B_PACKED_DOUBLE: 			78779731
+     FP_ARITH:SCALAR_DOUBLE: 			455800173
+     PAPI_VEC_SP: 			0
+     PAPI_TOT_CYC: 			2510216751
+     BR_INST_RETIRED: 			750072948
+     BRANCH_INSTRUCTIONS_RETIRED: 			752487582
+
+     #+end_example
+
+     | Counters                  |       MMSD |       Ours | ratio |
+     |---------------------------+------------+------------+-------|
+     | FP_ARITH:128B_PACKED_DOUBLE  |         53 |          0 |       |
+     | FP_ARITH:256B_PACKED_DOUBLE  |    2642016 |   78779731 | 29.82 |
+     | FP_ARITH:SCALAR_DOUBLE      |  525173559 |  455800173 |  0.87 |
+     | BRANCH_INSTRUCTIONS_RETIRED |  343394079 |  752487582 |  2.19 |
+     | MEM_INST_RETIRED:ALL_LOADS   |  777526078 | 1179642173 |  1.52 |
+     | MEM_INST_RETIRED:ALL_STORES  |  525173559 |  738292658 |  1.40 |
+     | PAPI_TOT_CYC                | 1964053667 | 2510216751 |  1.27 |
+
+     |      | Total arith. |
+     |------+--------------|
+     | MMSD |    535741729 |
+     | OURS |    770919097 |
+
+     |      | Arithmetic intensity |
+     |------+----------------------|
+     | MMSD |                 0.27 |
+     | OURS |                 0.31 |
+
 
 * Emacs Setup 							   :noexport:
   This document has local variables in its postembule, which should
