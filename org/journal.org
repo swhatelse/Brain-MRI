@@ -2625,62 +2625,284 @@ seq_time / tot_par
      some cases it is not working correctly.
 *** 2018-09-21
 **** Comparison armadillo vs MMSD
-     Number of MRI dimension: 5
-     #+begin_src sh :results output :exports both
-     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/scratch/squinito/Tools/OpenBLAS/bin/lib:/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/ompmmsd/libs:/scratch/squinito/Tools/googletest/googletest/build:/scratch/squinito/Tools/armadillo-code/lib/lib:/usr/local/cuda-8.0/lib64:/scratch/squinito/Tools/petk/lib:/scratch/squinito/Tools/cuDNN/lib64:
-     OMP_NUM_THREADS=1 ~/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/tests/performances/time_measures/kernels/ALS/ugrad/papi_mmsd
+     - Number of MRI dimension: 5
+       #+begin_src sh :results output :exports both
+         export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/scratch/squinito/Tools/OpenBLAS/bin/lib:/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/ompmmsd/libs:/scratch/squinito/Tools/googletest/googletest/build:/scratch/squinito/Tools/armadillo-code/lib/lib:/usr/local/cuda-8.0/lib64:/scratch/squinito/Tools/petk/lib:/scratch/squinito/Tools/cuDNN/lib64:
+         OMP_NUM_THREADS=1 ~/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/tests/performances/time_measures/kernels/ALS/ugrad/papi_mmsd
 
-     OMP_NUM_THREADS=1 ~/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/tests/performances/time_measures/kernels/ALS/ugrad/papi_ours
+         OMP_NUM_THREADS=1 ~/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/tests/performances/time_measures/kernels/ALS/ugrad/papi_ours
+       #+end_src
+
+       #+RESULTS:
+       #+begin_example
+       n: 5
+       PAPI_BR_CN: 			238386788
+       PAPI_BR_TKN: 			141005082
+       MEM_INST_RETIRED:ALL_LOADS: 			777526078
+       MEM_INST_RETIRED:ALL_STORES: 			296730534
+       FP_ARITH:128B_PACKED_DOUBLE: 			53
+       FP_ARITH:256B_PACKED_DOUBLE: 			2642016
+       FP_ARITH:SCALAR_DOUBLE: 			525173559
+       PAPI_VEC_SP: 			0
+       PAPI_TOT_CYC: 			1964053667
+       BR_INST_RETIRED: 			333832841
+       BRANCH_INSTRUCTIONS_RETIRED: 			343394079
+       
+       PAPI_BR_CN: 			573536704
+       PAPI_BR_TKN: 			229302156
+       MEM_INST_RETIRED:ALL_LOADS: 			1179642173
+       MEM_INST_RETIRED:ALL_STORES: 			738292658
+       FP_ARITH:128B_PACKED_DOUBLE: 			0
+       FP_ARITH:256B_PACKED_DOUBLE: 			78779731
+       FP_ARITH:SCALAR_DOUBLE: 			455800173
+       PAPI_VEC_SP: 			0
+       PAPI_TOT_CYC: 			2510216751
+       BR_INST_RETIRED: 			750072948
+       BRANCH_INSTRUCTIONS_RETIRED: 			752487582
+
+       #+end_example
+
+       | Counters                  |       MMSD |       Ours | ratio |
+       |---------------------------+------------+------------+-------|
+       | FP_ARITH:128B_PACKED_DOUBLE  |         53 |          0 |       |
+       | FP_ARITH:256B_PACKED_DOUBLE  |    2642016 |   78779731 | 29.82 |
+       | FP_ARITH:SCALAR_DOUBLE      |  525173559 |  455800173 |  0.87 |
+       | BRANCH_INSTRUCTIONS_RETIRED |  343394079 |  752487582 |  2.19 |
+       | MEM_INST_RETIRED:ALL_LOADS   |  777526078 | 1179642173 |  1.52 |
+       | MEM_INST_RETIRED:ALL_STORES  |  525173559 |  738292658 |  1.40 |
+       | PAPI_TOT_CYC                | 1964053667 | 2510216751 |  1.27 |
+
+       |      | Total arith. |
+       |------+--------------|
+       | MMSD |    535741729 |
+       | OURS |    770919097 |
+
+       - ratio:
+         #+begin_src R :results output :session :exports both
+           770919097 / 535741729
+         #+end_src
+
+         #+RESULTS:
+         : [1] 1.438975
+
+       |      | Arithmetic intensity |
+       |------+----------------------|
+       | MMSD |                 0.27 |
+       | OURS |                 0.31 |
+
+     - Number of MRI dimension: 4
+       #+begin_src sh :results output :exports both
+         export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/scratch/squinito/Tools/OpenBLAS/bin/lib:/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/ompmmsd/libs:/scratch/squinito/Tools/googletest/googletest/build:/scratch/squinito/Tools/armadillo-code/lib/lib:/usr/local/cuda-8.0/lib64:/scratch/squinito/Tools/petk/lib:/scratch/squinito/Tools/cuDNN/lib64:
+         OMP_NUM_THREADS=1 ~/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/tests/performances/time_measures/kernels/ALS/ugrad/papi_mmsd 4
+
+         OMP_NUM_THREADS=1 ~/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/tests/performances/time_measures/kernels/ALS/ugrad/papi_ours 4
+       #+end_src
+
+       #+RESULTS:
+       #+begin_example
+       n: 4
+       PAPI_BR_CN: 			165511330
+       PAPI_BR_TKN: 			85864965
+       MEM_INST_RETIRED:ALL_LOADS: 			554230864
+       MEM_INST_RETIRED:ALL_STORES: 			250914294
+       FP_ARITH:128B_PACKED_DOUBLE: 			26
+       FP_ARITH:256B_PACKED_DOUBLE: 			1766850
+       FP_ARITH:SCALAR_DOUBLE: 			375698414
+       PAPI_VEC_SP: 			0
+       PAPI_TOT_CYC: 			1630423924
+       BR_INST_RETIRED: 			260072736
+       BRANCH_INSTRUCTIONS_RETIRED: 			257494286
+
+       PAPI_BR_CN: 			275483408
+       PAPI_BR_TKN: 			100210399
+       MEM_INST_RETIRED:ALL_LOADS: 			729507920
+       MEM_INST_RETIRED:ALL_STORES: 			374035022
+       FP_ARITH:128B_PACKED_DOUBLE: 			0
+       FP_ARITH:256B_PACKED_DOUBLE: 			7418076
+       FP_ARITH:SCALAR_DOUBLE: 			422010079
+       PAPI_VEC_SP: 			0
+       PAPI_TOT_CYC: 			1553194824
+       BR_INST_RETIRED: 			393955747
+       BRANCH_INSTRUCTIONS_RETIRED: 			389909272
+
+       #+end_example
+
+       | Counters                  |       MMSD |       Ours | ratio |
+       |---------------------------+------------+------------+-------|
+       | FP_ARITH:128B_PACKED_DOUBLE  |         26 |          0 |       |
+       | FP_ARITH:256B_PACKED_DOUBLE  |    1766850 |    7418076 | 4.2   |
+       | FP_ARITH:SCALAR_DOUBLE      |  375698414 |  422010079 | 1.12  |
+       | BRANCH_INSTRUCTIONS_RETIRED |  257494286 |  389909272 | 1.51  |
+       | MEM_INST_RETIRED:ALL_LOADS   |  554230864 |  729507920 | 1.32  |
+       | MEM_INST_RETIRED:ALL_STORES  |  250914294 |  374035022 | 1.49  |
+       | PAPI_TOT_CYC                | 1630423924 | 1553194824 | 0.95  |
+
+       |      | Total arith. |
+       |------+--------------|
+       | MMSD |    382765866 |
+       | OURS |    451682383 |
+
+       - ratio:
+         #+begin_src R :results output :session :exports both
+           451682383 / 382765866
+         #+end_src
+
+         #+RESULTS:
+         : [1] 1.180049
+
+       |      | Arithmetic intensity |
+       |------+----------------------|
+       | MMSD |                 0.23 |
+       | OURS |                 0.29 |
+
+
+     - Number of MRI dimension: 8
+       #+begin_src sh :results output :exports both
+         export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/scratch/squinito/Tools/OpenBLAS/bin/lib:/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/ompmmsd/libs:/scratch/squinito/Tools/googletest/googletest/build:/scratch/squinito/Tools/armadillo-code/lib/lib:/usr/local/cuda-8.0/lib64:/scratch/squinito/Tools/petk/lib:/scratch/squinito/Tools/cuDNN/lib64:
+         OMP_NUM_THREADS=1 ~/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/tests/performances/time_measures/kernels/ALS/ugrad/papi_mmsd 8
+
+         OMP_NUM_THREADS=1 ~/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/tests/performances/time_measures/kernels/ALS/ugrad/papi_ours 8
+       #+end_src
+
+       #+RESULTS:
+       #+begin_example
+       n: 8
+       PAPI_BR_CN: 			373446158
+       PAPI_BR_TKN: 			233238141
+       MEM_INST_RETIRED:ALL_LOADS: 			1342107778
+       MEM_INST_RETIRED:ALL_STORES: 			529739884
+       FP_ARITH:128B_PACKED_DOUBLE: 			0
+       FP_ARITH:256B_PACKED_DOUBLE: 			137826334
+       FP_ARITH:SCALAR_DOUBLE: 			1035683372
+       PAPI_VEC_SP: 			0
+       PAPI_TOT_CYC: 			3172207986
+       BR_INST_RETIRED: 			539576610
+       BRANCH_INSTRUCTIONS_RETIRED: 			538930730
+
+       PAPI_BR_CN: 			640561894
+       PAPI_BR_TKN: 			264404314
+       MEM_INST_RETIRED:ALL_LOADS: 			1711555216
+       MEM_INST_RETIRED:ALL_STORES: 			1127395497
+       FP_ARITH:128B_PACKED_DOUBLE: 			0
+       FP_ARITH:256B_PACKED_DOUBLE: 			289530247
+       FP_ARITH:SCALAR_DOUBLE: 			645623271
+       PAPI_VEC_SP: 			0
+       PAPI_TOT_CYC: 			3843079134
+       BR_INST_RETIRED: 			886321648
+       BRANCH_INSTRUCTIONS_RETIRED: 			885406712
+
+#+end_example
+
+       | Counters                  |       MMSD |       Ours | ratio |
+       |---------------------------+------------+------------+-------|
+       | FP_ARITH:128B_PACKED_DOUBLE  |          0 |          0 |       |
+       | FP_ARITH:256B_PACKED_DOUBLE  |  137826334 |  289530247 |   2.1 |
+       | FP_ARITH:SCALAR_DOUBLE      | 1035683372 |  645623271 |  0.62 |
+       | BRANCH_INSTRUCTIONS_RETIRED |  538930730 |  885406712 |  1.64 |
+       | MEM_INST_RETIRED:ALL_LOADS   | 1342107778 | 1711555216 |  1.27 |
+       | MEM_INST_RETIRED:ALL_STORES  |  529739884 | 1127395497 |  2.13 |
+       | PAPI_TOT_CYC                | 3172207986 | 3843079134 |  1.21 |
+       
+
+       |      | Total arith. |
+       |------+--------------|
+       | MMSD |   1586988708 |
+       | OURS |   1803744259 |
+
+       - ratio:
+         #+begin_src R :results output :session :exports both
+           1803744259 / 1586988708
+         #+end_src
+
+         #+RESULTS:
+         : [1] 1.136583
+
+     #+begin_src R :results output :session :exports both
+       nb_dimensions = c(4,4,5,5,8,8)
+       versions = rep(c("mmsd", "ours"), 3)
+       tot_cyc = c(1630423924, 1553194824, 1964053667, 2510216751, 3172207986, 3843079134)
+       vec_64 = c(1766850, 7418076, 2642016, 78779731, 137826334, 289530247)
+       branching = c(257494286, 389909272, 343394079, 752487582, 538930730, 885406712)
+       load = c(554230864 ,  729507920, 777526078 , 1179642173, 1342107778 , 1711555216)
+       store = c(250914294 ,  374035022, 525173559 ,  738292658, 529739884 , 1127395497)
+       tot_arith = c(382765866, 451682383, 535741729, 770919097, 1586988708, 1803744259)
+       ratio_tot_cyc = rep(1.0, 6)
+       ratio_vec_64 = rep(1.0, 6)
+       ratio_branching = rep(1.0, 6)
+       ratio_load = rep(1.0, 6)
+       ratio_store = rep(1.0, 6)
+       ratio_tot_arith = rep(1.0, 6)
+       df = data.frame(nb_dimensions, versions, tot_cyc, vec_64, branching, load, store, tot_arith, ratio_tot_cyc, ratio_vec_64, ratio_branching, ratio_load, ratio_store, ratio_tot_arith)
+
+       df[df["versions"] == "ours",]$ratio_tot_cyc = df[df["versions"] == "ours",]$tot_cyc / df[df["versions"] == "mmsd",]$tot_cyc
+       df[df["versions"] == "ours",]$ratio_vec_64 = df[df["versions"] == "ours",]$vec_64 / df[df["versions"] == "mmsd",]$vec_64
+       df[df["versions"] == "ours",]$ratio_branching = df[df["versions"] == "ours",]$branching / df[df["versions"] == "mmsd",]$branching
+       df[df["versions"] == "ours",]$ratio_load = df[df["versions"] == "ours",]$load / df[df["versions"] == "mmsd",]$load
+       df[df["versions"] == "ours",]$ratio_store = df[df["versions"] == "ours",]$store / df[df["versions"] == "mmsd",]$store
+       df[df["versions"] == "ours",]$ratio_tot_arith = df[df["versions"] == "ours",]$tot_arith / df[df["versions"] == "mmsd",]$tot_arith
+       df
      #+end_src
 
      #+RESULTS:
      #+begin_example
-     n: 5
-     PAPI_BR_CN: 			238386788
-     PAPI_BR_TKN: 			141005082
-     MEM_INST_RETIRED:ALL_LOADS: 			777526078
-     MEM_INST_RETIRED:ALL_STORES: 			296730534
-     FP_ARITH:128B_PACKED_DOUBLE: 			53
-     FP_ARITH:256B_PACKED_DOUBLE: 			2642016
-     FP_ARITH:SCALAR_DOUBLE: 			525173559
-     PAPI_VEC_SP: 			0
-     PAPI_TOT_CYC: 			1964053667
-     BR_INST_RETIRED: 			333832841
-     BRANCH_INSTRUCTIONS_RETIRED: 			343394079
+       nb_dimensions versions    tot_cyc    vec_64 branching       load      store
+     1             4     mmsd 1630423924   1766850 257494286  554230864  250914294
+     2             4     ours 1553194824   7418076 389909272  729507920  374035022
+     3             5     mmsd 1964053667   2642016 343394079  777526078  525173559
+     4             5     ours 2510216751  78779731 752487582 1179642173  738292658
+     5             8     mmsd 3172207986 137826334 538930730 1342107778  529739884
+     6             8     ours 3843079134 289530247 885406712 1711555216 1127395497
+        tot_arith ratio_tot_cyc ratio_vec_64 ratio_branching ratio_load ratio_store
+     1  382765866     1.0000000     1.000000        1.000000   1.000000    1.000000
+     2  451682383     0.9526325     4.198475        1.514244   1.316253    1.490688
+     3  535741729     1.0000000     1.000000        1.000000   1.000000    1.000000
+     4  770919097     1.2780795    29.818037        2.191324   1.517174    1.405807
+     5 1586988708     1.0000000     1.000000        1.000000   1.000000    1.000000
+     6 1803744259     1.2114840     2.100689        1.642895   1.275274    2.128206
+       ratio_tot_arith
+     1        1.000000
+     2        1.180049
+     3        1.000000
+     4        1.438975
+     5        1.000000
+     6        1.136583
+    #+end_example
 
-     PAPI_BR_CN: 			573536704
-     PAPI_BR_TKN: 			229302156
-     MEM_INST_RETIRED:ALL_LOADS: 			1179642173
-     MEM_INST_RETIRED:ALL_STORES: 			738292658
-     FP_ARITH:128B_PACKED_DOUBLE: 			0
-     FP_ARITH:256B_PACKED_DOUBLE: 			78779731
-     FP_ARITH:SCALAR_DOUBLE: 			455800173
-     PAPI_VEC_SP: 			0
-     PAPI_TOT_CYC: 			2510216751
-     BR_INST_RETIRED: 			750072948
-     BRANCH_INSTRUCTIONS_RETIRED: 			752487582
+    #+begin_src sh :results output :exports both
+      export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/scratch/squinito/Tools/OpenBLAS/bin/lib:/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/ompmmsd/libs:/scratch/squinito/Tools/googletest/googletest/build:/scratch/squinito/Tools/armadillo-code/lib/lib:/usr/local/cuda-8.0/lib64:/scratch/squinito/Tools/petk/lib:/scratch/squinito/Tools/cuDNN/lib64:
+      OMP_NUM_THREADS=8 ~/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/tests/performances/time_measures/kernels/ALS/ugrad/papi_mmsd 4
 
-     #+end_example
+      OMP_NUM_THREADS=8 ~/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/tests/performances/time_measures/kernels/ALS/ugrad/papi_ours 4
+    #+end_src
 
-     | Counters                  |       MMSD |       Ours | ratio |
-     |---------------------------+------------+------------+-------|
-     | FP_ARITH:128B_PACKED_DOUBLE  |         53 |          0 |       |
-     | FP_ARITH:256B_PACKED_DOUBLE  |    2642016 |   78779731 | 29.82 |
-     | FP_ARITH:SCALAR_DOUBLE      |  525173559 |  455800173 |  0.87 |
-     | BRANCH_INSTRUCTIONS_RETIRED |  343394079 |  752487582 |  2.19 |
-     | MEM_INST_RETIRED:ALL_LOADS   |  777526078 | 1179642173 |  1.52 |
-     | MEM_INST_RETIRED:ALL_STORES  |  525173559 |  738292658 |  1.40 |
-     | PAPI_TOT_CYC                | 1964053667 | 2510216751 |  1.27 |
+    #+RESULTS:
+    #+begin_example
+    n: 4
+    PAPI_BR_CN: 			72754869
+    PAPI_BR_TKN: 			68239770
+    MEM_INST_RETIRED:ALL_LOADS: 			142989892
+    MEM_INST_RETIRED:ALL_STORES: 			49608851
+    FP_ARITH:128B_PACKED_DOUBLE: 			25
+    FP_ARITH:256B_PACKED_DOUBLE: 			31133229
+    FP_ARITH:SCALAR_DOUBLE: 			154741178
+    PAPI_VEC_SP: 			0
+    PAPI_TOT_CYC: 			823703350
+    BR_INST_RETIRED: 			88413208
+    BRANCH_INSTRUCTIONS_RETIRED: 			79013982
 
-     |      | Total arith. |
-     |------+--------------|
-     | MMSD |    535741729 |
-     | OURS |    770919097 |
+    PAPI_BR_CN: 			125540878
+    PAPI_BR_TKN: 			40445727
+    MEM_INST_RETIRED:ALL_LOADS: 			296634000
+    MEM_INST_RETIRED:ALL_STORES: 			119482918
+    FP_ARITH:128B_PACKED_DOUBLE: 			0
+    FP_ARITH:256B_PACKED_DOUBLE: 			6809140
+    FP_ARITH:SCALAR_DOUBLE: 			135538178
+    PAPI_VEC_SP: 			0
+    PAPI_TOT_CYC: 			569651645
+    BR_INST_RETIRED: 			158648096
+    BRANCH_INSTRUCTIONS_RETIRED: 			155701119
 
-     |      | Arithmetic intensity |
-     |------+----------------------|
-     | MMSD |                 0.27 |
-     | OURS |                 0.31 |
+#+end_example
 
 
 * Emacs Setup 							   :noexport:
