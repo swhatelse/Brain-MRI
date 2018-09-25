@@ -2474,8 +2474,13 @@ seq_time / tot_par
 
        - Performances:
          - Cluster \to MPI
-         - GPU \to CUDA/ OPENCL
+           compute a class on several cluster instead of a class per
+           cluster \to better balancing of the data \to should be ok with
+           run time library if ever needed
+         - GPU \to CUDA / OPENCL
+           - Might need an expert to implement.
          - CPU optimization \to Parallelized + vectorized
+         - Heterogenous parallelism
        - Pipeline and light processing might be rewritten in python
        - Computational part might be re-written in Julia
        - Documentation for user and developer
@@ -2682,7 +2687,33 @@ seq_time / tot_par
      | MMSD |                 0.27 |
      | OURS |                 0.31 |
 
+*** 2018-09-25
+**** Meeting GIN
+     - Parkison
+       - 3 maps
+       - 1 brain = 9 millions
+       - 10, 20 , 30 ... patients we don't really but should scale
+       - Build model on the fly for radiologist.
 
+     - Diabetes
+       - 36 subjects
+       - 5 * 12 * 24 data (every 5 min takes info in 1 day)
+       - 20 maps
+
+***** List of priorities
+       1. Neighbourhood \to me
+       2. Bayesian problem nodel \to Alexis
+       3. By pass R data loading \to me
+       4. Single precision \to me
+       5. Split data \to me
+       6. Clean install script \to me
+       7. parallelization \to me
+       8. minibatch
+       9. git repo \to me
+
+       MMSD long double?
+
+       Check the date of the next GIN meeting.
 * Emacs Setup 							   :noexport:
   This document has local variables in its postembule, which should
   allow Org-mode to work seamlessly without any setup. If you're
