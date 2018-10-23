@@ -1,4 +1,4 @@
-#+TAGS: noexport(n) software(s) Alexis(a) Florence(f) deprecated(d) EM(e) HMM(h) MMST(m) R(r) C(c) Bug(b) Optimization(o) Profiling(P) Performance
+#+TAGS: noexport(n) software(s) Alexis(a) Florence(f) deprecated(d) EM(e) HMM(h) MMST(m) R(r) C(c) Bug(b) Optimization(o) Profiling(P) Performance Meeting
 
 #+Title: Journal
 #+AUTHOR:      Steven QUINITO MASNADA
@@ -2395,7 +2395,7 @@ seq_time / tot_par
 
 ** September
 *** 2018-09-17
-**** TODO Presentation GIN 
+**** DONE Presentation GIN 
      DEADLINE: <2018-09-25 mar.>
 ***** Introduction
        - Pipeline
@@ -2624,10 +2624,90 @@ seq_time / tot_par
      : [1] 8.337957
 
 *** 2018-09-20
-**** TODO Bug in neighbourhood
+**** DONE Bug in the neighbourhood system                               :Bug:
      SCHEDULED: <2018-09-26 mer.>
-     On simple cases the neighbourhood seems ok but with rats brain in
-     some cases it is not working correctly.
+***** Problem description
+      On simple cases the neighbourhood seems ok but with rats brain in
+      some cases it is not working correctly.
+      
+      On the image provided by Alexis showing the weight of each
+      pixel, we observe the 2 first slices don't seem to have any
+      problem. However the remaining slices exhibit some anomaly in the
+      bottom left corner of the image. The anomaly seems very regular,
+      it has a rectangular shape. This part of this shape is outside
+      the brain area and a part overlap with the brain. Inside this
+      rectangle there is also a not smooth color gradient left \to
+      right. The top of the shape seems to correspond to the middle of
+      the image.
+***** Identifying the problem
+      - The rectangular shape could be caused by a loop.
+      - Voxels outside of the brain area are not rejected based on
+        their physical values because the physical value of voxel
+        inside the brain can be zero or even less.
+
+      - How many voxels do we have in input and output? We have the
+        same number of voxels...
+
+      - Lets try to light every voxels that are tagged as
+        neighbour. If there is a bug is the neighourhood system we
+        should see the brains along with the rectangular shape.
+        The image provided by Alexis the patient Fischer-1 brain.
+
+        #+BEGIN_SRC python  :results output :session :exports both
+          import numpy as np
+          import pandas as pd
+          import cv2 as cv
+
+          df = pd.read_csv("/home/squinito/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/tests/unit_tests/Neighbouhood/Rats_Sain_-_Brain_-_Lemasson_2016_meta.csv")
+
+          fischer1 = df[(df.Patient_Idx == 2) & (df.Slice == 2)]
+
+          image = np.ones((128,128), dtype=np.uint8)
+
+          offset = fischer1.iloc[0].Reduced_Idx
+
+          for index, voxel in fischer1.iterrows():
+              for n in range(0,voxel["Neighbour_Count"]):
+                  neighbour = fischer1.iloc[ voxel["N"+ str(n) ] - offset]
+                  image[neighbour["Coord_X"],neighbour["Coord_Y"]] = 255
+
+
+          cv.imwrite("/tmp/test.jpg", image, [int(cv.IMWRITE_JPEG_QUALITY), 120])
+        #+END_SRC
+
+        #+RESULTS:
+        : 
+        : >>> >>> >>> >>> ... ... ... ... >>> >>> True
+
+        It seems that there is no problem with the neighbourhood. But
+        we can try to use a color code to see how many neighbour has a
+        voxel. Voxel on the border should have different color.
+
+        #+begin_src python :results output :session :exports both
+          image_bgr = np.zeros((128,128,3), dtype=np.uint8)
+
+          color_code = [[128,255,128],
+                        [0,0,255],
+                        [0,255,0],
+                        [255,0,0],
+                        [0,255,255],
+                        [255,0,255],
+                        [255,255,0],
+                        [255,255,127],
+                        [255,255,255]]
+
+          for index, voxel in fischer1.iterrows():
+              image_bgr[voxel["Coord_X"],voxel["Coord_Y"]] = color_code[ voxel["Neighbour_Count"] ]
+
+          cv.imwrite("/tmp/test2.jpg", image_bgr, [int(cv.IMWRITE_JPEG_QUALITY), 120])
+
+        #+end_src
+
+        #+RESULTS:
+        : 
+        : >>> ... ... ... ... ... ... ... ... >>> >>> ... ... >>> True
+
+        This confirm that the neighbourhood system is not the problem.
 *** 2018-09-21
 **** Comparison armadillo vs MMSD
      - Number of MRI dimension: 5
@@ -2910,17 +2990,33 @@ seq_time / tot_par
 #+end_example
 
 *** 2018-09-25
-**** Meeting GIN
-     - Parkison
+**** Meeting GIN                                                    :Meeting:
+***** Veronica - Parkinson
        - 3 maps
        - 1 brain = 9 millions
        - 10, 20 , 30 ... patients we don't really but should scale
        - Build model on the fly for radiologist.
 
-     - Diabetes
-       - 36 subjects
-       - 5 * 12 * 24 data (every 5 min takes info in 1 day)
-       - 20 maps
+       Memory size of 1 human brain:
+       #+begin_src R :results output :session :exports both
+         ndims = 3 + 5
+         nPatients = 30
+         nvoxels = 9e6 
+         typeSize = 8 # Number of Bytes for double precision
+         Bytes = ndims * nvoxels * nPatients * typeSize
+         kB = Bytes / 1024
+         mB = kB / 1024
+         gB = mB / 1024
+         gB
+       #+end_src
+
+       #+RESULTS:
+       : [1] 16.09325
+
+***** Fei - Diabetes
+      - 36 subjects
+      - 5 * 12 * 24 data (every 5 min takes info in 1 day)
+      - 20 maps
 
 ***** List of priorities
        1. Neighbourhood \to me
@@ -2936,6 +3032,585 @@ seq_time / tot_par
        MMSD long double?
 
        Check the date of the next GIN meeting.
+*** 2018-09-28
+**** TODO [#A] Loading data in C++ [50%]
+***** DONE Convert CSV to HDF5
+      Python script to convert csv to HDF5 using Pandas library.
+***** DONE Read data from C++
+      CLOSED: [2018-10-03 mer. 16:40]
+      At first read data from c++ at once. We just provide to the C++
+      part the path to the data.
+
+      <2018-10-03 mer.> _Update_: Seems something is not working
+      correctly with hdf5. When conversion is made with the python
+      script the dataset name is not recognize with armadillo and all
+      the values are stored in a vector instead of a matrix. I don't
+      know if the problem come from armadillo or pandas. So for now
+      maybe we can just stick with the csv format.
+      
+      I made the choice to give to the c++ data already splitted into
+      files (one file containing the observations and one file
+      containing the neibourhood system). This way there is no need to
+      re-write the c++ part if the file structure changes. Only the
+      python part need to be changed. The counter part is that there
+      are more files to pass to the program.
+      I also modified the name of the output files of the script
+      preprocess.py.
+***** TODO Write results from C++
+***** TODO Modify R call to C++
+      Changes:
+      - 
+      =Data_importation_v2016_02_02.R= retrieve information passed to
+      the R script. It reads csv files and concatenate then if there
+      are several and reindex the data. It also retrieves
+      neighbourhood information.
+
+**** TODO [#C] Single precision
+**** TODO [#B] Better install script
+***** Installation procedure
+      - Need hdf5 support (lib and header file)
+**** TODO Split data
+**** TODO Parallelization
+***** TODO CPU
+***** TODO GPU
+***** TODO MPI
+**** TODO Git repo organization
+** October
+*** 2018-10-04
+**** Memory foot-print
+    Maybe the dataset size we are using currently is not that big. But
+    it is the memory consumed by our application.
+    If we take the case of the dataset
+    =Rats_Sain_-_Brain_-_Lemasson_2016.csv= we have 45051 voxels with 5
+    maps.
+    
+    Size of the data them selves:
+    #+begin_src R :results output :session :exports both
+      nVoxels = 45051
+      nDims = 5 + 1 # + 1 for the voxel id
+      dType = 8 # double precision
+      Bytes = nDims * nVoxels * dType
+      kB = Bytes / 1024
+      dataSetSize = kB / 1024
+      dataSetSize 
+    #+end_src
+
+    #+RESULTS:
+    : [1] 2.062271
+
+    Neighbourhood size:
+    #+begin_src R :results output :session :exports both
+      nVoxels = 45051
+      nDims = 8 + 1 + 1
+      dType = 4
+      Bytes = nDims * nVoxels * dType
+      kB = Bytes / 1024
+      neiSize = kB / 1024
+      neiSize
+    #+end_src
+
+    #+RESULTS:
+    : [1] 1.718559
+
+    Total input size:
+    #+begin_src R :results output :session :exports both
+      dataSetSize + neiSize
+    #+end_src
+
+    #+RESULTS:
+    : [1] 3.78083
+
+    #+BEGIN_SRC C
+      #include "/home/squinito/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/Model.hpp"
+
+      using namespace std;
+
+      int main(){
+
+          string data_path = "/home/squinito/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/tests/unit_tests/Neighbouhood/Rats_Sain_-_Brain_-_Lemasson_2016_val.csv";
+          string nei_path = "/home/squinito/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/tests/unit_tests/Neighbouhood/Rats_Sain_-_Brain_-_Lemasson_2016_meta.nei";
+          
+          Model model("pouet", data_path, nei_path, 1, 1.0, 1);
+
+          model.em(1, true, false, 1);
+          
+          return 0;
+      }
+          
+    #+END_SRC
+
+    #+BEGIN_SRC Makefile
+CC=g++
+CFLAGS=-std=c++11
+RCPP_PATH=/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp
+RCPPARMA_PATH=/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo
+INCLUDES=-I/home/squinito/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R -I/usr/share/R/include -I$(RCPPARMA_PATH)/include/ -I$(RCPP_PATH)/include
+LDFLAGS=-L/home/squinito/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R -L$(RCPP_PATH)/libs -lRcpp -L$(RCPPARMA_PATH)/libs -llapack -lrcpparmadillo -lR -pthread -lgsl -lRHmmMmst
+
+foo: foo.cpp
+	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $@ $(LDFLAGS)
+    #+END_SRC
+
+    Report: [[file:report/massif.out.22636][Memory consumption report]]:
+    #+begin_src sh :results output :exports both
+      ms_print report/massif.out.22636
+    #+end_src
+
+    #+RESULTS:
+    #+begin_example
+    --------------------------------------------------------------------------------
+    Command:            ./foo
+    Massif arguments:   (none)
+    ms_print arguments: report/massif.out.22636
+    --------------------------------------------------------------------------------
+
+
+        MB
+    30.34^                     ##                                                 
+         |                     #                                                  
+         |                     # :::::::::::::::::::::::::::::::::::::::::::@     
+         |                     # : ::: ::::::: : : :::::: ::::: ::::: : :: :@     
+         |                     # : ::: ::::::: : : :::::: ::::: ::::: : :: :@     
+         |                     # : ::: ::::::: : : :::::: ::::: ::::: : :: :@     
+         |                     # : ::: ::::::: : : :::::: ::::: ::::: : :: :@     
+         |                     # : ::: ::::::: : : :::::: ::::: ::::: : :: :@     
+         |                     # : ::: ::::::: : : :::::: ::::: ::::: : :: :@     
+         |                     # : ::: ::::::: : : :::::: ::::: ::::: : :: :@     
+         |                     # : ::: ::::::: : : :::::: ::::: ::::: : :: :@     
+         |                     # : ::: ::::::: : : :::::: ::::: ::::: : :: :@     
+         |              :::::::# : ::: ::::::: : : :::::: ::::: ::::: : :: :@:::::
+         |              : :  ::# : ::: ::::::: : : :::::: ::::: ::::: : :: :@: : :
+         |              : :  ::# : ::: ::::::: : : :::::: ::::: ::::: : :: :@: : :
+         |              : :  ::# : ::: ::::::: : : :::::: ::::: ::::: : :: :@: : :
+         |              : :  ::# : ::: ::::::: : : :::::: ::::: ::::: : :: :@: : :
+         |         :::::: :  ::# : ::: ::::::: : : :::::: ::::: ::::: : :: :@: : :
+         |        ::   :: :  ::# : ::: ::::::: : : :::::: ::::: ::::: : :: :@: : :
+         | :::::::::   :: :  ::# : ::: ::::::: : : :::::: ::::: ::::: : :: :@: : :
+       0 +----------------------------------------------------------------------->Gi
+         0                                                                   7.550
+
+    Number of snapshots: 56
+     Detailed snapshots: [14 (peak), 50]
+
+    --------------------------------------------------------------------------------
+      n        time(i)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
+    --------------------------------------------------------------------------------
+      0              0                0                0             0            0
+      1    152,477,658        2,259,736        2,259,260           476            0
+      2    282,133,744        2,259,776        2,259,291           485            0
+      3    376,589,752        2,259,848        2,259,348           500            0
+      4    543,834,801        2,259,776        2,259,291           485            0
+      5    685,556,718        2,259,776        2,259,291           485            0
+      6    816,362,851        2,259,848        2,259,348           500            0
+      7    999,416,777        4,061,616        4,061,099           517            0
+      8  1,095,740,790        5,863,680        5,863,178           502            0
+      9  1,526,263,723        5,863,560        5,863,075           485            0
+     10  1,650,972,892       13,067,968       13,067,246           722            0
+     11  1,872,799,464       13,069,512       13,068,774           738            0
+     12  2,154,669,405       13,067,968       13,067,246           722            0
+     13  2,261,580,573       13,069,968       13,069,182           786            0
+     14  2,467,277,952       31,813,600       31,451,318       362,282            0
+    98.86% (31,451,318B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+    ->28.32% (9,010,200B) 0x54EC7EF: Gaussian_Law::update_orthogonal(arma::Mat<double>&, arma::Col<double>&, arma::Mat<double>&) (memory.hpp:81)
+    | ->28.32% (9,010,200B) 0x54EEF7A: Gaussian_Law::update(arma::Mat<double>&, arma::Col<double>&, arma::Mat<double>&) (Gaussian_Law.cpp:235)
+    |   ->28.32% (9,010,200B) 0x54CE9F6: Cluster::update_M_step(arma::Mat<double>&, arma::Col<double>&, arma::Row<double>&, arma::Mat<double>&, arma::Mat<double>&, arma::Col<unsigned int>&) (Cluster.cpp:113)
+    |     ->28.32% (9,010,200B) 0x54F305B: Model::em(unsigned int, bool, bool, unsigned int) [clone ._omp_fn.1] (Model.cpp:482)
+    |       ->28.32% (9,010,200B) 0x7549CBD: GOMP_parallel (in /usr/lib/x86_64-linux-gnu/libgomp.so.1.0.0)
+    |         ->28.32% (9,010,200B) 0x54F0789: Model::em(unsigned int, bool, bool, unsigned int) (Model.cpp:458)
+    |           ->28.32% (9,010,200B) 0x403287: main (in /tmp/foo)
+    |             
+    ->22.66% (7,208,160B) 0x54EC4F3: Gaussian_Law::update_orthogonal(arma::Mat<double>&, arma::Col<double>&, arma::Mat<double>&) (Cube_meat.hpp:874)
+    | ->22.66% (7,208,160B) 0x54EEF7A: Gaussian_Law::update(arma::Mat<double>&, arma::Col<double>&, arma::Mat<double>&) (Gaussian_Law.cpp:235)
+    |   ->22.66% (7,208,160B) 0x54CE9F6: Cluster::update_M_step(arma::Mat<double>&, arma::Col<double>&, arma::Row<double>&, arma::Mat<double>&, arma::Mat<double>&, arma::Col<unsigned int>&) (Cluster.cpp:113)
+    |     ->22.66% (7,208,160B) 0x54F305B: Model::em(unsigned int, bool, bool, unsigned int) [clone ._omp_fn.1] (Model.cpp:482)
+    |       ->22.66% (7,208,160B) 0x7549CBD: GOMP_parallel (in /usr/lib/x86_64-linux-gnu/libgomp.so.1.0.0)
+    |         ->22.66% (7,208,160B) 0x54F0789: Model::em(unsigned int, bool, bool, unsigned int) (Model.cpp:458)
+    |           ->22.66% (7,208,160B) 0x403287: main (in /tmp/foo)
+    |             
+    ->11.33% (3,604,080B) 0x54C2781: std::__cxx11::list<arma::Mat<double>, std::allocator<arma::Mat<double> > >::operator=(std::__cxx11::list<arma::Mat<double>, std::allocator<arma::Mat<double> > > const&) (memory.hpp:81)
+    | ->05.66% (1,802,040B) 0x54D6A7B: Gamma_Law::Gamma_Law(Gamma_Law const&) (Gamma_Law.cpp:79)
+    | | ->05.66% (1,802,040B) 0x54DA234: Variational::Variational(int, int, int) (stl_list.h:114)
+    | |   ->05.66% (1,802,040B) 0x54F196E: Model::Model(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, double, int) (Model.cpp:69)
+    | |     ->05.66% (1,802,040B) 0x403227: main (in /tmp/foo)
+    | |       
+    | ->05.66% (1,802,040B) 0x54D6A8A: Gamma_Law::Gamma_Law(Gamma_Law const&) (Gamma_Law.cpp:80)
+    |   ->05.66% (1,802,040B) 0x54DA234: Variational::Variational(int, int, int) (stl_list.h:114)
+    |     ->05.66% (1,802,040B) 0x54F196E: Model::Model(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, double, int) (Model.cpp:69)
+    |       ->05.66% (1,802,040B) 0x403227: main (in /tmp/foo)
+    |         
+    ->06.80% (2,162,448B) 0x54BA939: arma::Mat<double>::init_warm(unsigned int, unsigned int) (memory.hpp:81)
+    | ->05.66% (1,802,040B) 0x54DF454: Data::Data(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) (Mat_meat.hpp:1880)
+    | | ->05.66% (1,802,040B) 0x54F184F: Model::Model(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, double, int) (Model.cpp:69)
+    | |   ->05.66% (1,802,040B) 0x403227: main (in /tmp/foo)
+    | |     
+    | ->01.13% (360,408B) 0x54F2F81: Model::em(unsigned int, bool, bool, unsigned int) [clone ._omp_fn.1] (Mat_meat.hpp:1880)
+    | | ->01.13% (360,408B) 0x7549CBD: GOMP_parallel (in /usr/lib/x86_64-linux-gnu/libgomp.so.1.0.0)
+    | |   ->01.13% (360,408B) 0x54F0789: Model::em(unsigned int, bool, bool, unsigned int) (Model.cpp:458)
+    | |     ->01.13% (360,408B) 0x403287: main (in /tmp/foo)
+    | |       
+    | ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+    | 
+    ->05.66% (1,802,040B) 0x54D6CE1: Gamma_Law::Gamma_Law(Gamma_Law const&) (memory.hpp:81)
+    | ->05.66% (1,802,040B) 0x54DA234: Variational::Variational(int, int, int) (stl_list.h:114)
+    |   ->05.66% (1,802,040B) 0x54F196E: Model::Model(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, double, int) (Model.cpp:69)
+    |     ->05.66% (1,802,040B) 0x403227: main (in /tmp/foo)
+    |       
+    ->05.66% (1,802,040B) 0x54D6D19: Gamma_Law::Gamma_Law(Gamma_Law const&) (memory.hpp:81)
+    | ->05.66% (1,802,040B) 0x54DA234: Variational::Variational(int, int, int) (stl_list.h:114)
+    |   ->05.66% (1,802,040B) 0x54F196E: Model::Model(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, double, int) (Model.cpp:69)
+    |     ->05.66% (1,802,040B) 0x403227: main (in /tmp/foo)
+    |       
+    ->05.66% (1,802,040B) 0x5553CE9: ALSSolver::minimize(arma::Col<double> const&, arma::Cube<double> const&, arma::Mat<double> const&, arma::Mat<double> const&, unsigned int) (memory.hpp:81)
+    | ->05.66% (1,802,040B) 0x54EC62A: Gaussian_Law::update_orthogonal(arma::Mat<double>&, arma::Col<double>&, arma::Mat<double>&) (Gaussian_Law.cpp:171)
+    |   ->05.66% (1,802,040B) 0x54EEF7A: Gaussian_Law::update(arma::Mat<double>&, arma::Col<double>&, arma::Mat<double>&) (Gaussian_Law.cpp:235)
+    |     ->05.66% (1,802,040B) 0x54CE9F6: Cluster::update_M_step(arma::Mat<double>&, arma::Col<double>&, arma::Row<double>&, arma::Mat<double>&, arma::Mat<double>&, arma::Col<unsigned int>&) (Cluster.cpp:113)
+    |       ->05.66% (1,802,040B) 0x54F305B: Model::em(unsigned int, bool, bool, unsigned int) [clone ._omp_fn.1] (Model.cpp:482)
+    |         ->05.66% (1,802,040B) 0x7549CBD: GOMP_parallel (in /usr/lib/x86_64-linux-gnu/libgomp.so.1.0.0)
+    |           ->05.66% (1,802,040B) 0x54F0789: Model::em(unsigned int, bool, bool, unsigned int) (Model.cpp:458)
+    |             ->05.66% (1,802,040B) 0x403287: main (in /tmp/foo)
+    |               
+    ->04.53% (1,441,600B) 0x54E1229: arma::Mat<int>::init_warm(unsigned int, unsigned int) (memory.hpp:81)
+    | ->04.53% (1,441,600B) 0x54DF7A6: Data::Data(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) (Mat_meat.hpp:1880)
+    | | ->04.53% (1,441,600B) 0x54F184F: Model::Model(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, double, int) (Model.cpp:69)
+    | |   ->04.53% (1,441,600B) 0x403227: main (in /tmp/foo)
+    | |     
+    | ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+    | 
+    ->03.40% (1,081,624B) 0x54BA727: arma::Mat<double>::init_cold() (memory.hpp:81)
+    | ->01.13% (360,408B) 0x54BCE6E: Gibbs_Law::Gibbs_Law(int, int, double) (Mat_meat.hpp:104)
+    | | ->01.13% (360,408B) 0x54F18A6: Model::Model(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, double, int) (Model.cpp:69)
+    | |   ->01.13% (360,408B) 0x403227: main (in /tmp/foo)
+    | |     
+    | ->01.13% (360,408B) 0x54BD122: Gibbs_Law::Gibbs_Law(int, int, double) (Mat_meat.hpp:786)
+    | | ->01.13% (360,408B) 0x54F18A6: Model::Model(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, double, int) (Model.cpp:69)
+    | |   ->01.13% (360,408B) 0x403227: main (in /tmp/foo)
+    | |     
+    | ->01.13% (360,408B) 0x54F18F3: Model::Model(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, double, int) (Mat_meat.hpp:104)
+    | | ->01.13% (360,408B) 0x403227: main (in /tmp/foo)
+    | |   
+    | ->00.00% (400B) in 1+ places, all below ms_print's threshold (01.00%)
+    | 
+    ->01.43% (455,862B) in 70 places, all below massif's threshold (1.00%)
+    | 
+    ->01.13% (360,408B) 0x54C8BC7: Multinomial_Law::Multinomial_Law(int, int) (memory.hpp:81)
+    | ->01.13% (360,408B) 0x54DA154: Variational::Variational(int, int, int) (Variational.cpp:26)
+    |   ->01.13% (360,408B) 0x54F196E: Model::Model(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, double, int) (Model.cpp:69)
+    |     ->01.13% (360,408B) 0x403227: main (in /tmp/foo)
+    |       
+    ->01.13% (360,408B) 0x54EC235: Gaussian_Law::update_orthogonal(arma::Mat<double>&, arma::Col<double>&, arma::Mat<double>&) (Cube_meat.hpp:467)
+    | ->01.13% (360,408B) 0x54EEF7A: Gaussian_Law::update(arma::Mat<double>&, arma::Col<double>&, arma::Mat<double>&) (Gaussian_Law.cpp:235)
+    |   ->01.13% (360,408B) 0x54CE9F6: Cluster::update_M_step(arma::Mat<double>&, arma::Col<double>&, arma::Row<double>&, arma::Mat<double>&, arma::Mat<double>&, arma::Col<unsigned int>&) (Cluster.cpp:113)
+    |     ->01.13% (360,408B) 0x54F305B: Model::em(unsigned int, bool, bool, unsigned int) [clone ._omp_fn.1] (Model.cpp:482)
+    |       ->01.13% (360,408B) 0x7549CBD: GOMP_parallel (in /usr/lib/x86_64-linux-gnu/libgomp.so.1.0.0)
+    |         ->01.13% (360,408B) 0x54F0789: Model::em(unsigned int, bool, bool, unsigned int) (Model.cpp:458)
+    |           ->01.13% (360,408B) 0x403287: main (in /tmp/foo)
+    |             
+    ->01.13% (360,408B) 0x54C9880: Multinomial_Law::Multinomial_Law(int, int) (memory.hpp:81)
+      ->01.13% (360,408B) 0x54DA154: Variational::Variational(int, int, int) (Variational.cpp:26)
+        ->01.13% (360,408B) 0x54F196E: Model::Model(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, double, int) (Model.cpp:69)
+          ->01.13% (360,408B) 0x403227: main (in /tmp/foo)
+
+    --------------------------------------------------------------------------------
+      n        time(i)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
+    --------------------------------------------------------------------------------
+     15  2,641,427,706       30,012,744       29,650,478       362,266            0
+     16  2,859,388,413       30,012,744       29,650,478       362,266            0
+     17  2,969,899,765       30,012,744       29,650,478       362,266            0
+     18  3,150,389,070       30,012,744       29,650,478       362,266            0
+     19  3,330,878,343       30,012,960       29,650,678       362,282            0
+     20  3,466,244,821       30,012,960       29,650,678       362,282            0
+     21  3,556,490,471       30,012,960       29,650,678       362,282            0
+     22  3,691,856,949       30,012,960       29,650,678       362,282            0
+     23  3,782,102,599       30,012,960       29,650,678       362,282            0
+     24  3,917,469,077       30,012,960       29,650,678       362,282            0
+     25  4,007,714,727       30,012,960       29,650,678       362,282            0
+     26  4,188,204,030       30,012,960       29,650,678       362,282            0
+     27  4,278,449,711       30,012,744       29,650,478       362,266            0
+     28  4,458,939,005       30,012,744       29,650,478       362,266            0
+     29  4,639,428,271       30,012,960       29,650,678       362,282            0
+     30  4,819,917,568       30,012,960       29,650,678       362,282            0
+     31  4,910,163,246       30,012,744       29,650,478       362,266            0
+     32  5,045,529,690       30,012,960       29,650,678       362,282            0
+     33  5,135,775,371       30,012,744       29,650,478       362,266            0
+     34  5,271,141,818       30,012,960       29,650,678       362,282            0
+     35  5,406,510,330       30,012,744       29,650,478       362,266            0
+     36  5,541,876,783       30,012,960       29,650,678       362,282            0
+     37  5,677,243,273       30,012,960       29,650,678       362,282            0
+     38  5,812,611,785       30,012,744       29,650,478       362,266            0
+     39  5,947,978,238       30,012,960       29,650,678       362,282            0
+     40  6,083,346,750       30,012,744       29,650,478       362,266            0
+     41  6,218,713,203       30,012,960       29,650,678       362,282            0
+     42  6,354,079,693       30,012,960       29,650,678       362,282            0
+     43  6,489,448,205       30,012,744       29,650,478       362,266            0
+     44  6,624,814,658       30,012,960       29,650,678       362,282            0
+     45  6,805,303,973       30,012,960       29,650,678       362,282            0
+     46  6,985,795,310       30,012,744       29,650,478       362,266            0
+     47  7,166,284,625       30,012,744       29,650,478       362,266            0
+     48  7,346,774,135       30,012,960       29,650,678       362,282            0
+     49  7,391,896,960       30,012,960       29,650,678       362,282            0
+     50  7,437,021,675       30,012,744       29,650,478       362,266            0
+    98.79% (29,650,478B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+    ->30.02% (9,010,200B) 0x54EC7EF: Gaussian_Law::update_orthogonal(arma::Mat<double>&, arma::Col<double>&, arma::Mat<double>&) (memory.hpp:81)
+    | ->30.02% (9,010,200B) 0x54EEF7A: Gaussian_Law::update(arma::Mat<double>&, arma::Col<double>&, arma::Mat<double>&) (Gaussian_Law.cpp:235)
+    |   ->30.02% (9,010,200B) 0x54CE9F6: Cluster::update_M_step(arma::Mat<double>&, arma::Col<double>&, arma::Row<double>&, arma::Mat<double>&, arma::Mat<double>&, arma::Col<unsigned int>&) (Cluster.cpp:113)
+    |     ->30.02% (9,010,200B) 0x54F305B: Model::em(unsigned int, bool, bool, unsigned int) [clone ._omp_fn.1] (Model.cpp:482)
+    |       ->30.02% (9,010,200B) 0x7549CBD: GOMP_parallel (in /usr/lib/x86_64-linux-gnu/libgomp.so.1.0.0)
+    |         ->30.02% (9,010,200B) 0x54F0789: Model::em(unsigned int, bool, bool, unsigned int) (Model.cpp:458)
+    |           ->30.02% (9,010,200B) 0x403287: main (in /tmp/foo)
+    |             
+    ->24.02% (7,208,160B) 0x54EC4F3: Gaussian_Law::update_orthogonal(arma::Mat<double>&, arma::Col<double>&, arma::Mat<double>&) (Cube_meat.hpp:874)
+    | ->24.02% (7,208,160B) 0x54EEF7A: Gaussian_Law::update(arma::Mat<double>&, arma::Col<double>&, arma::Mat<double>&) (Gaussian_Law.cpp:235)
+    |   ->24.02% (7,208,160B) 0x54CE9F6: Cluster::update_M_step(arma::Mat<double>&, arma::Col<double>&, arma::Row<double>&, arma::Mat<double>&, arma::Mat<double>&, arma::Col<unsigned int>&) (Cluster.cpp:113)
+    |     ->24.02% (7,208,160B) 0x54F305B: Model::em(unsigned int, bool, bool, unsigned int) [clone ._omp_fn.1] (Model.cpp:482)
+    |       ->24.02% (7,208,160B) 0x7549CBD: GOMP_parallel (in /usr/lib/x86_64-linux-gnu/libgomp.so.1.0.0)
+    |         ->24.02% (7,208,160B) 0x54F0789: Model::em(unsigned int, bool, bool, unsigned int) (Model.cpp:458)
+    |           ->24.02% (7,208,160B) 0x403287: main (in /tmp/foo)
+    |             
+    ->12.01% (3,604,080B) 0x54C2781: std::__cxx11::list<arma::Mat<double>, std::allocator<arma::Mat<double> > >::operator=(std::__cxx11::list<arma::Mat<double>, std::allocator<arma::Mat<double> > > const&) (memory.hpp:81)
+    | ->06.00% (1,802,040B) 0x54D6A7B: Gamma_Law::Gamma_Law(Gamma_Law const&) (Gamma_Law.cpp:79)
+    | | ->06.00% (1,802,040B) 0x54DA234: Variational::Variational(int, int, int) (stl_list.h:114)
+    | |   ->06.00% (1,802,040B) 0x54F196E: Model::Model(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, double, int) (Model.cpp:69)
+    | |     ->06.00% (1,802,040B) 0x403227: main (in /tmp/foo)
+    | |       
+    | ->06.00% (1,802,040B) 0x54D6A8A: Gamma_Law::Gamma_Law(Gamma_Law const&) (Gamma_Law.cpp:80)
+    |   ->06.00% (1,802,040B) 0x54DA234: Variational::Variational(int, int, int) (stl_list.h:114)
+    |     ->06.00% (1,802,040B) 0x54F196E: Model::Model(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, double, int) (Model.cpp:69)
+    |       ->06.00% (1,802,040B) 0x403227: main (in /tmp/foo)
+    |         
+    ->07.21% (2,162,448B) 0x54BA939: arma::Mat<double>::init_warm(unsigned int, unsigned int) (memory.hpp:81)
+    | ->06.00% (1,802,040B) 0x54DF454: Data::Data(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) (Mat_meat.hpp:1880)
+    | | ->06.00% (1,802,040B) 0x54F184F: Model::Model(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, double, int) (Model.cpp:69)
+    | |   ->06.00% (1,802,040B) 0x403227: main (in /tmp/foo)
+    | |     
+    | ->01.20% (360,408B) 0x54F2F81: Model::em(unsigned int, bool, bool, unsigned int) [clone ._omp_fn.1] (Mat_meat.hpp:1880)
+    | | ->01.20% (360,408B) 0x7549CBD: GOMP_parallel (in /usr/lib/x86_64-linux-gnu/libgomp.so.1.0.0)
+    | |   ->01.20% (360,408B) 0x54F0789: Model::em(unsigned int, bool, bool, unsigned int) (Model.cpp:458)
+    | |     ->01.20% (360,408B) 0x403287: main (in /tmp/foo)
+    | |       
+    | ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+    | 
+    ->06.00% (1,802,040B) 0x54D6CE1: Gamma_Law::Gamma_Law(Gamma_Law const&) (memory.hpp:81)
+    | ->06.00% (1,802,040B) 0x54DA234: Variational::Variational(int, int, int) (stl_list.h:114)
+    |   ->06.00% (1,802,040B) 0x54F196E: Model::Model(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, double, int) (Model.cpp:69)
+    |     ->06.00% (1,802,040B) 0x403227: main (in /tmp/foo)
+    |       
+    ->06.00% (1,802,040B) 0x54D6D19: Gamma_Law::Gamma_Law(Gamma_Law const&) (memory.hpp:81)
+    | ->06.00% (1,802,040B) 0x54DA234: Variational::Variational(int, int, int) (stl_list.h:114)
+    |   ->06.00% (1,802,040B) 0x54F196E: Model::Model(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, double, int) (Model.cpp:69)
+    |     ->06.00% (1,802,040B) 0x403227: main (in /tmp/foo)
+    |       
+    ->04.80% (1,441,600B) 0x54E1229: arma::Mat<int>::init_warm(unsigned int, unsigned int) (memory.hpp:81)
+    | ->04.80% (1,441,600B) 0x54DF7A6: Data::Data(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) (Mat_meat.hpp:1880)
+    | | ->04.80% (1,441,600B) 0x54F184F: Model::Model(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, double, int) (Model.cpp:69)
+    | |   ->04.80% (1,441,600B) 0x403227: main (in /tmp/foo)
+    | |     
+    | ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+    | 
+    ->03.60% (1,081,424B) 0x54BA727: arma::Mat<double>::init_cold() (memory.hpp:81)
+    | ->01.20% (360,408B) 0x54BCE6E: Gibbs_Law::Gibbs_Law(int, int, double) (Mat_meat.hpp:104)
+    | | ->01.20% (360,408B) 0x54F18A6: Model::Model(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, double, int) (Model.cpp:69)
+    | |   ->01.20% (360,408B) 0x403227: main (in /tmp/foo)
+    | |     
+    | ->01.20% (360,408B) 0x54BD122: Gibbs_Law::Gibbs_Law(int, int, double) (Mat_meat.hpp:786)
+    | | ->01.20% (360,408B) 0x54F18A6: Model::Model(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, double, int) (Model.cpp:69)
+    | |   ->01.20% (360,408B) 0x403227: main (in /tmp/foo)
+    | |     
+    | ->01.20% (360,408B) 0x54F18F3: Model::Model(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, double, int) (Mat_meat.hpp:104)
+    | | ->01.20% (360,408B) 0x403227: main (in /tmp/foo)
+    | |   
+    | ->00.00% (200B) in 1+ places, all below ms_print's threshold (01.00%)
+    | 
+    ->01.52% (457,262B) in 72 places, all below massif's threshold (1.00%)
+    | 
+    ->01.20% (360,408B) 0x54C8BC7: Multinomial_Law::Multinomial_Law(int, int) (memory.hpp:81)
+    | ->01.20% (360,408B) 0x54DA154: Variational::Variational(int, int, int) (Variational.cpp:26)
+    |   ->01.20% (360,408B) 0x54F196E: Model::Model(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, double, int) (Model.cpp:69)
+    |     ->01.20% (360,408B) 0x403227: main (in /tmp/foo)
+    |       
+    ->01.20% (360,408B) 0x54EC235: Gaussian_Law::update_orthogonal(arma::Mat<double>&, arma::Col<double>&, arma::Mat<double>&) (Cube_meat.hpp:467)
+    | ->01.20% (360,408B) 0x54EEF7A: Gaussian_Law::update(arma::Mat<double>&, arma::Col<double>&, arma::Mat<double>&) (Gaussian_Law.cpp:235)
+    |   ->01.20% (360,408B) 0x54CE9F6: Cluster::update_M_step(arma::Mat<double>&, arma::Col<double>&, arma::Row<double>&, arma::Mat<double>&, arma::Mat<double>&, arma::Col<unsigned int>&) (Cluster.cpp:113)
+    |     ->01.20% (360,408B) 0x54F305B: Model::em(unsigned int, bool, bool, unsigned int) [clone ._omp_fn.1] (Model.cpp:482)
+    |       ->01.20% (360,408B) 0x7549CBD: GOMP_parallel (in /usr/lib/x86_64-linux-gnu/libgomp.so.1.0.0)
+    |         ->01.20% (360,408B) 0x54F0789: Model::em(unsigned int, bool, bool, unsigned int) (Model.cpp:458)
+    |           ->01.20% (360,408B) 0x403287: main (in /tmp/foo)
+    |             
+    ->01.20% (360,408B) 0x54C9880: Multinomial_Law::Multinomial_Law(int, int) (memory.hpp:81)
+      ->01.20% (360,408B) 0x54DA154: Variational::Variational(int, int, int) (Variational.cpp:26)
+        ->01.20% (360,408B) 0x54F196E: Model::Model(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, unsigned int, double, int) (Model.cpp:69)
+          ->01.20% (360,408B) 0x403227: main (in /tmp/foo)
+
+    --------------------------------------------------------------------------------
+      n        time(i)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
+    --------------------------------------------------------------------------------
+     51  7,482,144,500       30,012,744       29,650,478       362,266            0
+     52  7,527,267,325       30,012,744       29,650,478       362,266            0
+     53  7,588,994,764       13,069,624       13,068,862           762            0
+     54  7,816,339,169       13,067,992       13,067,254           738            0
+     55  8,106,588,878       13,067,992       13,067,254           738            0
+#+end_example
+
+    Memory consumption \approx 30 MB
+    Almost x10 bigger
+
+    ALS footprint:
+    #+begin_src R :results output :session :exports both
+      nVoxels = 45051
+      nDims = 5 * 5
+      dType = 8
+      Bytes = nDims * nVoxels * dType
+      kB = Bytes / 1024
+      orthMat = kB / 1024
+      orthMat
+    #+end_src
+
+    #+RESULTS:
+    : [1] 8.592796
+    
+*** 2018-10-22
+**** Run from R
+     #+begin_src sh :results output :exports both
+       cd /home/squinito/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R
+       git checkout direct_data_loading
+       make mrproper
+       make -j7
+     #+end_src
+
+     #+begin_src R :results output :session :exports both
+       library(Rcpp)
+       setwd("/home/squinito/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R")
+           
+       lib = dyn.load("libRHmmMmst.so")
+       mod = Rcpp::Module("model_module", lib)
+       Model = mod$Model
+       obs_path = "tests/unit_tests/Neighbouhood/Rats_Sain_-_Brain_-_Lemasson_2016_val.csv"
+       nei_path = "tests/unit_tests/Neighbouhood/Rats_Sain_-_Brain_-_Lemasson_2016_meta.nei"
+       model = Model$new("MMST", obs_path, nei_path, 3, 2.0, 10)
+       model$initialization()
+       model$em(1, TRUE, TRUE, 8)
+     #+end_src
+
+     #+RESULTS:
+     #+begin_example
+     initialization with a gmm model
+     In ALS algorithm : max steps number (10) reached without convergence.
+     In ALS algorithm : max steps number (10) reached without convergence.
+     In ALS algorithm : max steps number (10) reached without convergence.
+     em : step 0
+       lower-bound E-step (+) : -1.39834e+06
+     In ALS algorithm : max steps number (10) reached without convergence.
+     In ALS algorithm : max steps number (10) reached without convergence.
+     In ALS algorithm : max steps number (10) reached without convergence.
+       lower-bound M-step (-) : -1.57734e+06
+       lower-bound (+) : -1.57734e+06
+#+end_example
+
+***** DONE Probabilities initialization                                 :Bug:
+      CLOSED: [2018-10-23 mar. 11:37]
+      After running gmm to initialize the probabilities we get
+      negative probabilities.
+****** Comparison with former version
+       #+begin_src sh :results output :exports both
+         cd /home/squinito/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R
+         git checkout f1651b3cfef5caea5b16e4215e7b1e25f4d94cbd
+         make mrproper
+         make -j7
+       #+end_src
+
+       #+RESULTS:
+       #+begin_example
+       rm -f *.o
+       rm -f *.so
+       g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  ALS_CPC.cpp -o ALS_CPC.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+       g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  Gibbs_Law.cpp -o Gibbs_Law.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+       g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  Multinomial.cpp -o Multinomial.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+       g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  utils.cpp -o utils.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+       g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  Cluster.cpp -o Cluster.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+       g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  Gamma_Law.cpp -o Gamma_Law.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+       g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  Variational.cpp -o Variational.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+       g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  Data.cpp -o Data.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+       g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  Gaussian_Law.cpp -o Gaussian_Law.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+       g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  Model.cpp -o Model.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+       g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  RcppWrapper.cpp -o RcppWrapper.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+       g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  Stiefel.cpp -o Stiefel.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+       g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  Solver.cpp -o Solver.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+       g++ -std=c++11 -fopenmp -Wall -Wl,-Bsymbolic-functions -Wl,-z,relro -shared ALS_CPC.o Gibbs_Law.o Multinomial.o utils.o Cluster.o Gamma_Law.o Variational.o Data.o Gaussian_Law.o Model.o RcppWrapper.o Stiefel.o Solver.o -o libRHmmMmst.so -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+#+end_example
+
+       #+begin_src R :results output :session :exports both
+         library(Rcpp)
+         setwd("/home/squinito/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R")
+
+         lib = dyn.load("libRHmmMmst.so")
+         mod = Rcpp::Module("model_module", lib)
+         Model = mod$Model
+         obs_path = "tests/unit_tests/Neighbouhood/Rats_Sain_-_Brain_-_Lemasson_2016_val.csv"
+         nei_path = "tests/unit_tests/Neighbouhood/Rats_Sain_-_Brain_-_Lemasson_2016_meta.nei"
+
+         obs = data.matrix( read.csv(obs_path)[2:6] )
+         neis = data.matrix( read.csv(nei_path)[3:10] )
+         n_neis = read.csv(nei_path)[["Neighbour_Count"]]
+
+         model = Model$new("MMST", obs, 3, neis, n_neis, 2.0, 10)
+         model$initialization( FALSE , matrix(data = 1 , nrow = 1 , ncol = 1) )
+       #+end_src
+
+       #+RESULTS:
+       : initialization with a gmm model
+       :   -28.1756  -31.5454  -26.3483
+       : 
+       :   -33.5424  -32.9332  -31.9444
+       : 
+       : In ALS algorithm : max steps number (10) reached without convergence.
+       : In ALS algorithm : max steps number (10) reached without convergence.
+       : In ALS algorithm : max steps number (10) reached without convergence.
+
+       A part of the code was missing...
+*** 2018-10-23
+**** DONE Number of rows neighbour count doesn't match the number of row in neighbourhood :Bug:
+     CLOSED: [2018-10-23 mar. 11:52]
+     #+begin_src sh :results output :exports both
+       cd /home/squinito/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R
+       git checkout direct_data_loading
+       make mrproper
+       make -j7
+     #+end_src
+
+     #+RESULTS:
+     #+begin_example
+     M	Code_R/Data.cpp
+     rm -f *.o
+     rm -f *.so
+     g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  ALS_CPC.cpp -o ALS_CPC.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+     g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  Gibbs_Law.cpp -o Gibbs_Law.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+     g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  Multinomial.cpp -o Multinomial.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+     g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  utils.cpp -o utils.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+     g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  Cluster.cpp -o Cluster.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+     g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  Gamma_Law.cpp -o Gamma_Law.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+     g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  Variational.cpp -o Variational.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+     g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  Data.cpp -o Data.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+     g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  Gaussian_Law.cpp -o Gaussian_Law.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+     g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  Model.cpp -o Model.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+     g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  RcppWrapper.cpp -o RcppWrapper.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+     g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  Stiefel.cpp -o Stiefel.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+     g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  Solver.cpp -o Solver.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+     g++ -std=c++11 -fopenmp -Wall -Wl,-Bsymbolic-functions -Wl,-z,relro -shared ALS_CPC.o Gibbs_Law.o Multinomial.o utils.o Cluster.o Gamma_Law.o Variational.o Data.o Gaussian_Law.o Model.o RcppWrapper.o Stiefel.o Solver.o -o libRHmmMmst.so -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+#+end_example
+
+     #+begin_src R :results output :session :exports both
+       library(Rcpp)
+       setwd("/home/squinito/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R")
+           
+       lib = dyn.load("libRHmmMmst.so")
+       mod = Rcpp::Module("model_module", lib)
+       Model = mod$Model
+       obs_path = "tests/unit_tests/Neighbouhood/Rats_Sain_-_Brain_-_Lemasson_2016_val.csv"
+       nei_path = "tests/unit_tests/Neighbouhood/Rats_Sain_-_Brain_-_Lemasson_2016_meta.nei"
+       model = Model$new("MMST", obs_path, nei_path, 3, 2.0, 10)
+       model$initialization()
+     #+end_src
+     
+     Data was not load correctly. The index to load the first row of the submatrix was incorrect.
 * Emacs Setup 							   :noexport:
   This document has local variables in its postembule, which should
   allow Org-mode to work seamlessly without any setup. If you're
