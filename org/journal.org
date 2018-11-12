@@ -133,7 +133,7 @@
       because they are very far compared to the one on the x or
       y-axis. When moving to human MRI 3D neighbourhood will be necessary.
 *** 2017-11-13
-**** TODO Meeting
+**** DONE Meeting
 ***** DONE Algorithms
       Release a first implementation to see how it performs with
       possible code optimization and then we can think about maybe
@@ -950,8 +950,8 @@
     #+RESULTS:
     : C++ object <0x32356b0> of class 'Model' <0x12cb200>
 *** 2018-01-30
-**** TODO Cleaning git history[3/4]
-      - [ ] Group unit tests
+**** DONE Cleaning git history[4/4]
+      - [X] Group unit tests
       - [X] Group matrix/vector shape modifications
         - [X] Split =Vector/matrix shapes correction= \to =684933f8e05908ee5c7fcbaeca45f7d01cc9afac=
           To extract modifs to main.cpp
@@ -1112,8 +1112,8 @@ pick 9766543 Added examples cases and README
        because of A^{-1} = U_i A where U_i is the gamma law mean for the i^{th}
        observation. So we are forced to put the entire matmult in the
        sum over the observations.
-**** TODO Questions about ALS [1/2]
-     - [ ] What is the difference  between A^{-1} in the paper and U A? U
+**** DONE Questions about ALS [2/2]
+     - [X] What is the difference  between A^{-1} in the paper and U A? U
        being the mean of the gamma distribution.
        Here we directly work with the precision matrix which is the
        inverse of the covariance matrix.
@@ -1161,9 +1161,9 @@ seq_time / tot_par
 : [1] 2.409639
 
 *** 2018-03-22
-**** TODO Meeting [0/6]
-     - [ ] Integrate c++ code in R pipeline
-     - [ ] Use reference instead of copy of data
+**** TODO Meeting [3/6]
+     - [X] Integrate c++ code in R pipeline
+     - [X] Use reference instead of copy of data
      - [ ] Sample sub-part of the data in ALS
        - [ ] Compare with complete data using the minimum of the
          objective function.
@@ -1172,17 +1172,21 @@ seq_time / tot_par
          - [ ] Try with a few points at the beggining and
            increase the number of points near the end. 
      - [ ] Porting ALS on GPU using CUDA and CUDA libraries 
-     - [ ] Compare with the ManifoldOptim package. 
+     - [X] Compare with the ManifoldOptim package. 
+       Package not working
      - [ ] Save EM steps for easier debugging.
 ** April
 *** 2018-04-03
-**** TODO Armadillo and GPU
-     - [ ] Take a look at bandicoot
-     - [ ] Take a look at ArrayFire
-     - [ ] Take a look at OpenAcc + Armadillo
-**** TODO Integrate c++ code in R pipeline [2/3]
-***** TODO Wrap all data needed in a list for HMRF estimate [0/1]
-      - [ ] Add in [[file:~/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/R/01_Reference_model_adjustment_v2016_02_08.R][01_Reference_model_adjustment_v2016_02_08.R]]
+**** DONE Armadillo and GPU
+     - [X] Take a look at bandicoot
+       Still in developpement
+     - [X] Take a look at ArrayFire
+       Not opensource
+     - [X] Take a look at OpenAcc + Armadillo
+       Not possible.
+**** DONE Integrate c++ code in R pipeline [3/3]
+***** DONE Wrap all data needed in a list for HMRF estimate [1/1]
+      - [X] Add in [[file:~/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/R/01_Reference_model_adjustment_v2016_02_08.R][01_Reference_model_adjustment_v2016_02_08.R]]
 ***** DONE Invoke HMRF estimate
      - [[file:~/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/R/Functions/Functions_v2016_02_04.R][Function_v2016_02_04.R]] \to =chooseKGroups()=
        This is where the EM algorithm is invoked.
@@ -1436,10 +1440,10 @@ seq_time / tot_par
      - much much slower
      - can be tricky to use is the algorithm is complex
      - most of them are for Java.
-**** TODO EM algo schema
+**** DONE EM algo schema
      Visualize the algorithm should help wrt. spliting data,
      parallelize, communication, synchronization
-**** TODO Redesign application
+**** DONE Redesign application
      - Readable and maintainable 
      - Easily extendable:
        Find the right level of abstraction \to close to what statisticians
@@ -3057,13 +3061,19 @@ seq_time / tot_par
       I also modified the name of the output files of the script
       preprocess.py.
 ***** TODO Write results from C++
+      Maybe not necessary. See if it is sufficient to read directly
+      from c++ object.
 ***** TODO Modify R call to C++
-      Changes:
-      - 
-      =Data_importation_v2016_02_02.R= retrieve information passed to
-      the R script. It reads csv files and concatenate then if there
-      are several and reindex the data. It also retrieves
+
+      =Data_importation_v2016_02_02.R= retrieves information input to
+      the R script. It reads csv files and concatenates them +
+      re-index the data if there are several. It also retrieves
       neighbourhood information.
+      Possibilities:
+      - Do the concatenation and re-indexing before-hand and store it
+        in one unique file instead of a list of file
+      - Do the concatenation as usual and save the concatenated data
+        in a "temp" file and use this file.
 
 **** TODO [#C] Single precision
 **** TODO [#B] Better install script
@@ -3610,7 +3620,616 @@ foo: foo.cpp
        model$initialization()
      #+end_src
      
-     Data was not load correctly. The index to load the first row of the submatrix was incorrect.
+     Data was not load correctly. The index to load the first row of
+     the submatrix was incorrect.
+**** Quick look at R memory management
+     #+begin_src R :results output :session :exports both
+       library(pryr)
+
+       mem_used()
+       m = matrix(nrow=1024*1024*1024, ncol=1)
+       object_size(m)
+       mem_used()
+     #+end_src
+
+     #+RESULTS:
+     : 4.32 GB
+     : 4.29 GB
+     : 4.32 GB
+
+     #+begin_src R :results output graphics :file (org-babel-temp-file "figure" ".png") :exports both :width 600 :height 600 :session
+       n_elem = 64
+       # sizes <- sapply(0:n_elem, function(n) object_size(seq_len(n)))
+       sizes <- sapply(0:n_elem, function(n) object_size(double(n)))
+       plot(0:n_elem, sizes, xlab = "Length", ylab = "Size (bytes)", 
+            type = "s")
+     #+end_src
+
+     #+RESULTS:
+     [[file:/tmp/babel-585vqt/figure585CBR.png]]
+
+     #+begin_src R :results output graphics :file (org-babel-temp-file "figure" ".png") :exports both :width 600 :height 600 :session
+       plot(0:n_elem, sizes - 40, xlab = "Length", 
+            ylab = "Bytes excluding overhead", type = "n")
+       abline(h = 0, col = "grey80")
+       abline(h = c(8, 16, 32, 48, 64, 128), col = "grey80")
+       abline(a = 0, b = 4, col = "grey90", lwd = 4)
+       lines(sizes - 40, type = "s")
+     #+end_src
+
+     #+RESULTS:
+     [[file:/tmp/babel-585vqt/figure585pfj.png]]
+
+***** Memory consumption of =hmrf_estimate=
+      #+begin_src sh :results output :exports both
+        cd /home/squinito/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R
+        git checkout f1651b3cfef5caea5b16e4215e7b1e25f4d94cbd
+        make mrproper
+        make -j7
+      #+end_src
+
+      #+RESULTS:
+      #+begin_example
+      rm -f *.o
+      rm -f *.so
+      g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  ALS_CPC.cpp -o ALS_CPC.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+      g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  Gibbs_Law.cpp -o Gibbs_Law.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+      g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  Multinomial.cpp -o Multinomial.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+      g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  utils.cpp -o utils.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+      g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  Cluster.cpp -o Cluster.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+      g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  Gamma_Law.cpp -o Gamma_Law.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+      g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  Variational.cpp -o Variational.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+      g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  Data.cpp -o Data.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+      g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  Gaussian_Law.cpp -o Gaussian_Law.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+      g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  Model.cpp -o Model.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+      g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  RcppWrapper.cpp -o RcppWrapper.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+      g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  Stiefel.cpp -o Stiefel.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+      g++ -std=c++11 -fopenmp -Wall -fPIC -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g -c -I/usr/share/R//include -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include/ -I/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/include  Solver.cpp -o Solver.o -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+      g++ -std=c++11 -fopenmp -Wall -Wl,-Bsymbolic-functions -Wl,-z,relro -shared ALS_CPC.o Gibbs_Law.o Multinomial.o utils.o Cluster.o Gamma_Law.o Variational.o Data.o Gaussian_Law.o Model.o RcppWrapper.o Stiefel.o Solver.o -o libRHmmMmst.so -llapack -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/Rcpp/libs -lRcpp -L/scratch/squinito/R_libs/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/libs -lgsl -lm -lrcpparmadillo 
+#+end_example
+
+      #+begin_src R :results output :session :exports both
+        library(pryr)
+        library(Rcpp)
+
+        setwd("/home/squinito/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R")
+
+        mem_used()
+
+        lib = dyn.load("libRHmmMmst.so")
+        mod = Rcpp::Module("model_module", lib)
+        Model = mod$Model
+        obs_path = "tests/unit_tests/Neighbouhood/Rats_Sain_-_Brain_-_Lemasson_2016_val.csv"
+        nei_path = "tests/unit_tests/Neighbouhood/Rats_Sain_-_Brain_-_Lemasson_2016_meta.nei"
+
+        obs = data.matrix( read.csv(obs_path)[2:6] )
+        neis = data.matrix( read.csv(nei_path)[3:10] )
+        n_neis = read.csv(nei_path)[["Neighbour_Count"]]
+
+        obs = data.matrix( read.csv(obs_path)[2:6] )
+        neis = data.matrix( read.csv(nei_path)[3:10] )
+        n_neis = read.csv(nei_path)[["Neighbour_Count"]]
+        
+        object_size(obs) + object_size(neis) + object_size(n_neis)
+
+        model = Model$new("MMST", obs, 3, neis, n_neis, 2.0, 10)
+        model$initialization( FALSE , matrix(data = 1 , nrow = 1 , ncol = 1) )
+
+        object_size(model)
+
+        model$em(2, TRUE, TRUE, 8)
+
+        object_size(model)
+
+        mem_used()
+      #+end_src
+
+      #+RESULTS:
+      #+begin_example
+      39.9 MB
+      3.43 MB
+      initialization with a gmm model
+      In ALS algorithm : max steps number (10) reached without convergence.
+      In ALS algorithm : max steps number (10) reached without convergence.
+      In ALS algorithm : max steps number (10) reached without convergence.
+      3.23 MB
+      em : step 0
+        lower-bound E-step (+) : -1.39306e+06
+      In ALS algorithm : max steps number (10) reached without convergence.
+      In ALS algorithm : max steps number (10) reached without convergence.
+      In ALS algorithm : max steps number (10) reached without convergence.
+        lower-bound M-step (-) : -1.5897e+06
+        lower-bound (+) : -1.5897e+06
+      em : step 1
+        lower-bound E-step (+) : -1.4468e+06
+      In ALS algorithm : max steps number (10) reached without convergence.
+      In ALS algorithm : max steps number (10) reached without convergence.
+      In ALS algorithm : max steps number (10) reached without convergence.
+        lower-bound M-step (-) : -1.53457e+06
+        lower-bound (+) : -1.53457e+06
+      3.23 MB
+      45.1 MB
+#+end_example
+
+***** Big artificial dataset
+      Lets build the dataset:
+      #+begin_src R :results output :session :exports both
+        library(MASS)
+        library(pryr)
+        library(plyr)
+
+                                                # nx = 256
+                                                # ny = 256
+                                                # nz = 128
+        nx = 256
+        ny = 256
+        nz = 128
+        n_patient = 1
+        n_obs = nx * ny * nz * n_patient
+        n_dim = 3
+        n_clusters = 3
+
+        patient_names = paste(rep("P", n_patient), 
+                              seq(n_patient),
+                              sep = "")
+        df = data.frame(Patient = rep(patient_names, each=nx * ny * nz),
+                        Coord_X = integer(n_obs),
+                        Coord_Y = integer(n_obs),
+                        Coord_Z = integer(n_obs),
+                        ADC = numeric(n_obs),
+                        CBV = numeric(n_obs),
+                        AUC = numeric(n_obs)
+                        )
+
+        cluster_means = list()
+                                                # simulate cluster means
+        for( k in 1:n_clusters){
+            cluster_means[[k]] = runif(n_dim, 0, 10)
+        }
+
+        cluster_covs = list()
+                                                # simulate cluster covariances
+        for( k in 1:n_clusters){
+            cluster_covs[[k]] = diag(n_dim)
+        }
+
+                                                # simulate the labels
+        labels <- rmultinom(n = 1, size = n_obs, prob = rep(x = 1, times = n_clusters))
+
+                                                # generate observations values from the labels
+        obs <- lapply(X = seq_len(length.out = n_clusters), 
+                      FUN = function(k) {
+                          mvrnorm(n = labels[ k ], mu = cluster_means[[ k ]], Sigma = cluster_covs[[ k ]])
+                      })
+
+                                                # Concatenate observations
+        obs <- array(data = sapply(X = seq_len(length.out = n_dim), 
+                                   FUN = function(m) {
+                                       res <- lapply(X = obs, FUN = function(x) {
+                                           x[ , m]
+                                       } )
+                                       unlist( res )
+                                   } ), 
+                     dim = c(n_obs, n_dim)
+                     )
+
+        df[,c("ADC", "CBV", "AUC")] = obs
+
+        # build coordinates
+        df$Coord_X = rep(0:(nx-1), ny * nz )
+        df$Coord_Y = rep(0:(ny-1), each = ny)
+        df$Coord_Z = rep(0:(nz-1), each = ny * nx)
+
+        object_size(df)
+
+        write.csv(df, "/scratch/squinito/Dev/Data/dataset.csv",  row.names = FALSE)
+      #+end_src
+
+      #+RESULTS:
+      : 336 MB
+
+***** Loading big csv in R
+     When reading big file =read.table= and others tend to consume a
+     lot of memory.
+     Specifying the data type for each column limit the memory
+     consumption of =read.table= and others:
+     #+begin_src R :results output :session :exports both
+     library(pryr)
+     
+     mem_used()
+     df = read.csv("/scratch/squinito/Dev/Data/dataset.csv", colClasses=c("character", "integer", "integer", "integer", "numeric", "numeric", "numeric"))
+     mem_used()
+     #+end_src
+
+     Maybe this can help with veronica's memory problem.
+
+     =read.table= manual point out that storing data in matrices is
+     more efficient and I think also we should re-think the way we
+     are storing data.
+*** 2018-10-26
+**** TODO Scaling neighbourhood building
+     Currently the python script get stuck when running on large csv file.
+      #+begin_src sh :results output :exports both
+        cd /home/squinito/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R
+        ./preprocess.py --files="/scratch/squinito/Dev/Data/dataset.csv" --val_physio_names="ADC,CBV,AUC" --val_physio="-100,100,-100,100,-100,100"
+      #+end_src
+     
+***** DONE Rewrite clearly =preprocess.py=
+      CLOSED: [2018-10-29 lun. 14:17]
+      Finish the rewriting started when looking for a bug in
+      preprocess.py.
+      I think it is important because the current version is not
+      clean neither clear and lack of flexibility.
+      
+      Test:
+       #+begin_src sh :results output :exports both
+        cd /home/squinito/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R
+        ./preprocess.py --files="tests/unit_tests/Neighbouhood/Rats_Sain_-_Brain_-_Lemasson_2016.csv" --val_physio_names="ADC,CBV,AUC,T1map,T2map" --val_physio="-1e9,1e9,-1e9,1e9,-1e9,1e9,-1e9,1e9,-1e9,1e9"
+       #+end_src
+
+       #+RESULTS:
+       : Preprocessing tests/unit_tests/Neighbouhood/Rats_Sain_-_Brain_-_Lemasson_2016.csv
+
+        #+BEGIN_SRC python  :results output :session :exports both
+          import numpy as np
+          import pandas as pd
+          import cv2 as cv
+
+          df = pd.read_csv("/home/squinito/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R/tests/unit_tests/Neighbouhood/Rats_Sain_-_Brain_-_Lemasson_2016_meta.csv")
+
+          fischer1 = df[(df.Patient_Idx == 2) & (df.Slice == 2)]
+
+          offset = fischer1.iloc[0].Reduced_Idx
+
+          image_bgr = np.zeros((128,128,3), dtype=np.uint8)
+
+          color_code = [[128,255,128],
+                        [0,0,255],
+                        [0,255,0],
+                        [255,0,0],
+                        [0,255,255],
+                        [255,0,255],
+                        [255,255,0],
+                        [255,255,127],
+                        [255,255,255]]
+
+          for index, voxel in fischer1.iterrows():
+              image_bgr[voxel["Coord_X"],voxel["Coord_Y"]] = color_code[ voxel["Neighbour_Count"] ]
+
+          cv.imwrite("/tmp/test2.jpg", image_bgr, [int(cv.IMWRITE_JPEG_QUALITY), 120])
+
+        #+END_SRC
+
+        #+RESULTS:
+        : 
+        : >>> >>> >>> >>> >>> >>> >>> >>> >>> >>> >>> ... ... ... ... ... ... ... ... >>> >>> ... ... >>> True
+
+***** DONE Accelerate the processing
+      CLOSED: [2018-10-29 lun. 15:57]
+      Without further profiling of the script I assumed that the
+      slowest part is the function =gen_nghd_second= because we have a
+      for loop over all the voxels and for each voxel we make several
+      searches in the data frame. Other parts of the script don't seem
+      as expensive.
+
+      Native for python loops are generally slow so I tried to use the
+      =apply= method from pandas. One problem with apply is that it
+      doesn't perform in place modification and we have to go through
+      a memory copy which might increase the memory usage.
+      
+      - Version using apply on a dataset of 45051 voxels:
+        #+begin_src sh :shebang "#!/bin/bash" :results output :exports both
+          cd /home/squinito/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R
+          time ./preprocess.py --files="tests/unit_tests/Neighbouhood/Rats_Sain_-_Brain_-_Lemasson_2016.csv" --val_physio_names="ADC,CBV,AUC,T1map,T2map" --val_physio="-1e9,1e9,-1e9,1e9,-1e9,1e9,-1e9,1e9,-1e9,1e9"
+        #+end_src
+
+        #+RESULTS:
+        : real	2m47.231s
+        : user	2m45.288s
+        : sys	0m0.292s
+
+      - Version using loops on the same dataset:
+        #+begin_src sh :shebang "#!/bin/bash" :results output :exports both
+          cd /home/squinito/Dev/MISTIS/MMST_with_Markov_Random_Field/Code_R
+          time ./preprocess.py --files="tests/unit_tests/Neighbouhood/Rats_Sain_-_Brain_-_Lemasson_2016.csv" --val_physio_names="ADC,CBV,AUC,T1map,T2map" --val_physio="-1e9,1e9,-1e9,1e9,-1e9,1e9,-1e9,1e9,-1e9,1e9"
+        #+end_src
+
+        #+RESULTS:
+        : real	9m23.543s
+        : user	9m21.216s
+        : sys	0m0.268s
+
+        Speed-up:
+        #+begin_src R :results output :session :exports both
+          v1 = 2 * 60 + 47
+          v2 = 9 * 60 + 23 
+          v2 / v1
+        #+end_src
+
+        #+RESULTS:
+        : [1] 3.371257
+      
+***** Memory usage
+      Turns out this works only for small dataset but for bigger one
+      the program seems to stop because it uses to much memory.
+      Here a study of the memory usage of the program.
+
+      The script =preprocess.py= is run with input file of different
+      file to follow the consumption of the program. mprof is used to
+      profile the memory consumption over the time.
+      
+      Here are the different results for the different data size:
+      - 45051 voxels using for loops methods
+        #+RESULTS:
+      [[file:/home/squinito/Dev/MISTIS/Brain-MRI/org/img/memory_profiling/python/building_neighbourhood/fp_loops_no_copy.png]]
+
+      - 45051 voxels using apply
+        #+RESULTS:
+ [[file:/home/squinito/Dev/MISTIS/Brain-MRI/org/img/memory_profiling/python/building_neighbourhood/fp_apply_and_copy.png]]    
+
+      - 256 * 256 * 128 * 5 voxels
+        At the end we can see a peak in the memory consumption, this
+        when the program crashes.
+        #+RESULTS:
+ [[file:/home/squinito/Dev/MISTIS/Brain-MRI/org/img/memory_profiling/python/building_neighbourhood/fp_apply_and_copy_256_256_128_5.png]]
+
+***** Bottleneck
+    - [ ] Identify the bottleneck \to where is the actual problem?
+
+*** 2018-10-30
+**** Function pointers-based design
+     #+BEGIN_SRC C++ :includes <iostream>
+       using namespace std;
+
+       class Param{};
+
+       class Integer: public Param{
+       public:
+           int value;
+       };
+
+       class Model{
+       public:
+           Param* param;
+           void (*E)(Param*) = NULL; 
+           void (*M)(Param*) = NULL; 
+           
+           Model(Param* param, void (*E)(Param*), void (*M)(Param*)){
+               this->param = param;
+               this->E = E;
+               this->M = M;
+           }
+
+           void EM(){
+               E(param);
+               M(param);
+           }
+       };
+
+       // Model Code
+       void E(Param* foo){
+           Integer* p = (Integer*) foo;
+           cout << p->value << endl;
+       }
+
+       void M(Param* foo){
+           Integer* p = (Integer*) foo;
+           cout << p->value << endl;
+       }
+
+       int main(){
+           Param* p = new Integer();
+           Model m(p, &E,&M);
+           m.EM();
+
+           return 0;
+       }
+     #+END_SRC
+
+     #+RESULTS:
+     | 0 |
+     | 0 |
+
+     Gave a try to plantuml to model an architecture:
+     #+BEGIN_SRC plantuml :file /tmp/pointer_design.png
+     class Model{
+         +Param param
+         +Model(Param* param, void (*E)(Param*), void (*M)(Param*))
+         +void (*E)(Param p)
+         +void (*M)(Param p)
+         +void EM()  
+     }
+     
+     abstract class Param{
+     }
+
+     class Data{
+         +int n_obs
+         +mat observations
+     }
+
+     class Spatial_Data{ 
+         +vec neighbour_count
+         +mat neighbours
+     }
+
+     Param <|-- Data
+
+     Data <|-- Spatial_Data
+
+     Model .. Param
+     #+END_SRC
+
+     #+RESULTS:
+     [[file:/tmp/pointer_design.png]]
+
+** November
+*** 2018-11-05
+**** Calling parent destructor
+     Parent destructor is called implicitly but it should be virtual
+     when using polym
+     #+BEGIN_SRC C++ :includes <iostream>
+       using namespace std;
+       class A{
+       public:
+           virtual ~A(){
+               cout << "A" << endl;
+           }
+       };
+
+       class B: public A{
+       public:
+           virtual ~B(){
+               cout << "B" << endl;
+           }
+       };
+
+       int main(){
+           A* b = new B();
+           delete b;
+           return 0;
+       }
+     #+END_SRC
+
+     #+RESULTS:
+     | B |
+     | A |
+
+**** Constructors
+     #+BEGIN_SRC C++ :includes <iostream>
+       using namespace std;
+
+       class A{
+       public:
+           A(int x){
+               cout << "A" << endl;
+           }
+           ~A(){
+               cout << "~A" << endl;
+           }
+       };
+
+       class B: public A{
+       public:
+           B(int x): A(x){
+               cout << "B" << endl;
+           }
+           ~B(){
+               cout << "~B" << endl;
+           }
+       };
+
+       int main(){
+           B* b = new B(10);
+           delete b;
+
+           return 0;
+       }
+     #+END_SRC
+
+     #+RESULTS:
+     | A  |
+     | B  |
+     | ~B |
+     | ~A |
+
+**** Armadillo matrix construct from copy
+     #+BEGIN_SRC C++ :includes <iostream> :includes <armadillo> :flags -I/scratch/squinito/Tools/armadillo-code/include :libs -L/scratch/squinito/Tools/armadillo-code/lib/lib larmadillo
+       using namespace std;     
+       using namespace arma;     
+
+       class A{
+       public:
+           Mat<double> m;
+           A(Mat<double>& m): m(m){
+           }
+       };
+
+       class B: public A{
+       public:
+           B(Mat<double> m): A(m){}
+       };
+
+       class C: public B{
+       public:
+           C(Mat<double> m): B(m){}
+       };
+
+
+       mat m1(9,9);
+       C a(m1);
+
+       cout << m1 << endl;
+       cout << a.m << endl;
+     #+END_SRC
+
+     #+RESULTS:
+     | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+     | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+     | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+     | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+     | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+     | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+     | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+     | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+     | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+     |   |   |   |   |   |   |   |   |   |
+     | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+     | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+     | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+     | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+     | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+     | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+     | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+     | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+     | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+*** 2018-11-06
+**** Calling mother constructor and initializing other variable
+     #+BEGIN_SRC C++ :includes <iostream>
+       using namespace std;
+
+       class C{
+       public:
+           int y;
+           C(int y): y(y){}
+       };
+
+       class A{
+       public:
+           C c1;
+           A(int x): c1(x){}
+       };
+
+       class B: public A{
+       public:
+           C c2;
+           B(int c1, int c2): A(c1), c2(c2){}
+       };
+
+       B b(3,8);
+
+       cout << b.c1.y << endl;
+       cout << b.c2.y << endl;
+     #+END_SRC
+
+     #+RESULTS:
+     | 3 |
+     | 8 |
+
+*** 2018-11-09
+**** TODO Take a look a pqR
+     When the most important stuff will be done.
+     http://www.pqr-project.org/
+*** 2018-11-12
+**** TODO Think about a Solver class hierarchy
+     Each solver specification could be used the same way. For example
+     the class Gaussian could use different type of solver the how it
+     is used could be only describe in the class =Gaussian_Law=. 
+     How the solver can be used:
+     1. Create the solver
+     2. Init the solver
+     3. Minimize
 * Emacs Setup 							   :noexport:
   This document has local variables in its postembule, which should
   allow Org-mode to work seamlessly without any setup. If you're
