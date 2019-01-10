@@ -1,4 +1,4 @@
-#+TAGS: noexport(n) software(s) Alexis(a) Florence(f) deprecated(d) EM(e) HMM(h) MMST(m) R(r) C(c) Bug(b) Optimization(o) Profiling(P) Performance Meeting
+#+TAGS: noexport(n) software(s) Alexis(a) Florence(f) deprecated(d) EM(e) HMM(h) MMST(m) R(r) C(c) Bug(b) Optimization(o) Profiling(P) Performance Meeting Tips(t) Memory
 
 #+Title: Journal
 #+AUTHOR:      Steven QUINITO MASNADA
@@ -3764,7 +3764,7 @@ foo: foo.cpp
         nx = 256
         ny = 256
         nz = 128
-        n_patient = 1
+        n_patient = 10
         n_obs = nx * ny * nz * n_patient
         n_dim = 3
         n_clusters = 3
@@ -3826,7 +3826,8 @@ foo: foo.cpp
       #+end_src
 
       #+RESULTS:
-      : 336 MB
+      : 
+      : 3.36 GB
 
 ***** Loading big csv in R
      When reading big file =read.table= and others tend to consume a
@@ -3973,7 +3974,7 @@ foo: foo.cpp
         #+RESULTS:
  [[file:/home/squinito/Dev/MISTIS/Brain-MRI/org/img/memory_profiling/python/building_neighbourhood/fp_apply_and_copy_256_256_128_5.png]]
 
-***** Bottleneck
+***** TODO Bottleneck
     - [ ] Identify the bottleneck \to where is the actual problem?
 
 *** 2018-10-30
@@ -4230,6 +4231,835 @@ foo: foo.cpp
      1. Create the solver
      2. Init the solver
      3. Minimize
+
+*** 2018-11-16
+**** Debug (GDB) R + C++                                               :Tips:
+     1. attach <R pid>
+     2. signal 0 \to stop gdb from blocking R process
+**** TODO Remote connection with mac
+     DEADLINE: <2018-12-10 lun.>
+*** 2018-11-19
+**** Valgrind                                                          :Tips:
+     source: http://valgrind.org/docs/manual/manual-core-adv.html
+
+     In terminal 1:
+     #+begin_src sh :results output :exports both
+     valgrind --tool=memcheck --vgdb=yes --vgdb-error=0 prog
+     #+end_src
+
+     In terminal 2:
+     #+begin_src R :results output :session :exports both
+       gdb prog
+
+       (gdb) target remote | vgdb
+     #+end_src
+**** Pointers and copy constructors
+     I finally found why I had segfault when destructors call free or delete
+     on pointers. When we make copy of an object is made, all the
+     pointers of the copy points to the same memory addresses of the
+     original object. Thus when the destructor is called free / delete
+     is called as many time as there are copy on the same memory
+     addresses. So we need to define a copy constructor which doesn't
+     copy the pointers addresses but alloc new memory and copy values.
+**** What kind of polymorphism without pointers?
+     #+BEGIN_SRC C++
+       #include <iostream>
+       #include <vector>
+
+       using namespace std;
+
+       class Animal {
+       public:
+           virtual void speak() {
+               cout << "Animal speaking..." << endl;
+           };
+       };
+
+       class Cat : public Animal {
+       public:
+           virtual void speak(){
+               cout << "Meow!" << endl;
+           }
+       };
+
+       class Dog : public Animal {
+       public:
+           virtual void speak(){
+               cout << "Wof!" << endl;
+           }
+       };
+
+       class Duck : public Animal {
+       public:
+           virtual void speak(){
+               cout << "Coin coin!" << endl;
+           }
+       };
+
+       int main(){
+           vector< Animal& > zoo;
+           zoo.push_back(Duck());
+           zoo[0].speak();
+
+           return 0;
+       }
+     #+END_SRC
+
+     #+RESULTS:
+
+** December
+*** 2018-12-12
+**** Julia update
+     Today trying new julia version to see if data frame and csv are
+     faster than before and see if petk still works.
+     Previous version (tag): v0.6.2     
+     Commit ID: d386e40c17d43b79fc89d3e579fc04547241787c
+     #+begin_src sh :session foo :results output :exports both
+       cd /scratch/squinito/Tools/julia
+       git log -n 1
+     #+end_src
+
+     #+RESULTS:
+     : commit d386e40c17d43b79fc89d3e579fc04547241787c
+     : Author: Alex Arslan <ararslan@comcast.net>
+     : Date:   Wed Dec 13 10:08:26 2017 -0800
+     : 
+     :     Tag version v0.6.2 (#24993)
+     
+     Get changes:
+     #+begin_src sh :session foo :results output :exports both
+       git fetch
+     #+end_src
+
+     #+BEGIN_EXAMPLE
+     remote: Enumerating objects: 7383, done.
+     remote: Counting objects: 100% (7383/7383), done.
+     remote: Compressing objects: 100% (52/52), done.
+     remote: Total 23143 (delta 7354), reused 7343 (delta 7331), pack-reused 15760
+     Réception d'objets: 100% (23143/23143), 14.76 MiB | 1.95 MiB/s, fait.
+     Résolution des deltas: 100% (17273/17273), complété avec 1358 objets locaux.
+     Depuis git://github.com/JuliaLang/julia
+     * [nouvelle branche] KristofferC-patch-3 -> origin/KristofferC-patch-3
+     * [nouvelle branche] KristofferC-patch-4 -> origin/KristofferC-patch-4
+     * [nouvelle branche] KristofferC-patch-5 -> origin/KristofferC-patch-5
+     * [nouvelle branche] KristofferC-patch-6 -> origin/KristofferC-patch-6
+     * [nouvelle branche] KristofferC-patch-7 -> origin/KristofferC-patch-7
+     * [nouvelle branche] aa/1.1.0-rc1 -> origin/aa/1.1.0-rc1
+     * [nouvelle branche] aa/1.2.0-DEV -> origin/aa/1.2.0-DEV
+     * [nouvelle branche] aa/aggressive-remove_linenums -> origin/aa/aggressive-remove_linenums
+     * [nouvelle branche] aa/dotted-tilde -> origin/aa/dotted-tilde
+     * [nouvelle branche] aa/extrema-function -> origin/aa/extrema-function
+     * [nouvelle branche] aa/glibc   -> origin/aa/glibc
+     * [nouvelle branche] aa/join-function -> origin/aa/join-function
+     * [nouvelle branche] aa/peek-a-boo -> origin/aa/peek-a-boo
+     * [nouvelle branche] ajf/view-of-range -> origin/ajf/view-of-range
+     * [nouvelle branche] amp-ref    -> origin/amp-ref
+     * [nouvelle branche] an/I       -> origin/an/I
+     * [nouvelle branche] an/In      -> origin/an/In
+     * [nouvelle branche] anj/nosuitesparse -> origin/anj/nosuitesparse
+     * [nouvelle branche] backport-1.0.3 -> origin/backport-1.0.3
+     * [nouvelle branche] backport-1.1.0 -> origin/backport-1.1.0
+     * [nouvelle branche] breakmore  -> origin/breakmore
+     * [nouvelle branche] cjf/fpe-exceptions -> origin/cjf/fpe-exceptions
+     * [nouvelle branche] cjf/line-continuation -> origin/cjf/line-continuation
+     * [nouvelle branche] cjf/show-exception-stacks -> origin/cjf/show-exception-stacks
+     * [nouvelle branche] fe/default-environment -> origin/fe/default-environment
+     * [nouvelle branche] fe/loggerstream -> origin/fe/loggerstream
+     * [nouvelle branche] fe/numbered-docs -> origin/fe/numbered-docs
+     * [nouvelle branche] gpu-broadcast -> origin/gpu-broadcast
+     * [nouvelle branche] jb/06_compiler_perf -> origin/jb/06_compiler_perf
+     * [nouvelle branche] jb/anyeltype -> origin/jb/anyeltype
+     * [nouvelle branche] jb/arraygcperf -> origin/jb/arraygcperf
+     * [nouvelle branche] jb/codeinfostuff -> origin/jb/codeinfostuff
+     * [nouvelle branche] jb/convertmissingnothing -> origin/jb/convertmissingnothing
+     * [nouvelle branche] jb/fix29059 -> origin/jb/fix29059
+     * [nouvelle branche] jb/fix29501 -> origin/jb/fix29501
+     * [nouvelle branche] jb/fix29594 -> origin/jb/fix29594
+     * [nouvelle branche] jb/fix30335 -> origin/jb/fix30335
+     * [nouvelle branche] jb/fix30346 -> origin/jb/fix30346
+     * [nouvelle branche] jb/jr/tuplelattice -> origin/jb/jr/tuplelattice
+     * [nouvelle branche] jb/latency10 -> origin/jb/latency10
+     * [nouvelle branche] jb/latency3 -> origin/jb/latency3
+     * [nouvelle branche] jb/modprefixshow -> origin/jb/modprefixshow
+     * [nouvelle branche] jb/printfbuf -> origin/jb/printfbuf
+     * [nouvelle branche] jb/warnmissingcode -> origin/jb/warnmissingcode
+     * [nouvelle branche] jn/29872-compare -> origin/jn/29872-compare
+     * [nouvelle branche] jn/30344   -> origin/jn/30344
+     * [nouvelle branche] jn/channel-mt -> origin/jn/channel-mt
+     + 50be707...98bcab7 jn/codegen-norecursion -> origin/jn/codegen-norecursion  (mise à jour forcée)
+     * [nouvelle branche] jn/condition-mt -> origin/jn/condition-mt
+     * [nouvelle branche] jn/fixup-pty-and-precompile -> origin/jn/fixup-pty-and-precompile
+     * [nouvelle branche] jn/gc-pool-lazy -> origin/jn/gc-pool-lazy
+     + da9451a...f968d44 jn/infer-Const-cache -> origin/jn/infer-Const-cache  (mise à jour forcée)
+     * [nouvelle branche] jn/iocolor2 -> origin/jn/iocolor2
+     * [nouvelle branche] jn/loading-plus -> origin/jn/loading-plus
+     * [nouvelle branche] jn/loading-refactoring -> origin/jn/loading-refactoring
+     * [nouvelle branche] jn/loading-refactoring-docs -> origin/jn/loading-refactoring-docs
+     * [nouvelle branche] jn/localize-multiversioning -> origin/jn/localize-multiversioning
+     * [nouvelle branche] jn/lower-inline_cost_threshold -> origin/jn/lower-inline_cost_threshold
+     * [nouvelle branche] jn/ml-match-opt -> origin/jn/ml-match-opt
+     * [nouvelle branche] jn/release0.6-26833 -> origin/jn/release0.6-26833
+     * [nouvelle branche] jn/update-precompile-heuristic -> origin/jn/update-precompile-heuristic
+     * [nouvelle branche] jr/betterspoof -> origin/jr/betterspoof
+     * [nouvelle branche] jr/cinfoworldbounds -> origin/jr/cinfoworldbounds
+     * [nouvelle branche] jr/cinfoworldboundstmp -> origin/jr/cinfoworldboundstmp
+     * [nouvelle branche] jr/compiledebug -> origin/jr/compiledebug
+     * [nouvelle branche] jr/doasyouaretold -> origin/jr/doasyouaretold
+     * [nouvelle branche] jr/ptupleprop -> origin/jr/ptupleprop
+     * [nouvelle branche] jr/testlog -> origin/jr/testlog
+     * [nouvelle branche] jr/tmp2    -> origin/jr/tmp2
+     * [nouvelle branche] jr/tupleconst -> origin/jr/tupleconst
+     * [nouvelle branche] jr/tuplekindtypefix -> origin/jr/tuplekindtypefix
+     * [nouvelle branche] jr/tuplelatticeold -> origin/jr/tuplelatticeold
+     * [nouvelle branche] jr/wip     -> origin/jr/wip
+     * [nouvelle branche] kc/JULIA_ENV -> origin/kc/JULIA_ENV
+     * [nouvelle branche] kc/anonymous -> origin/kc/anonymous
+     * [nouvelle branche] kc/break_linalg -> origin/kc/break_linalg
+     * [nouvelle branche] kc/codepoint_to_utf8 -> origin/kc/codepoint_to_utf8
+     * [nouvelle branche] kc/copyto_inline -> origin/kc/copyto_inline
+     * [nouvelle branche] kc/debug_partr_precompile -> origin/kc/debug_partr_precompile
+     * [nouvelle branche] kc/debug_precompile -> origin/kc/debug_precompile
+     * [nouvelle branche] kc/ggwp    -> origin/kc/ggwp
+     * [nouvelle branche] kc/ident   -> origin/kc/ident
+     * [nouvelle branche] kc/immut_dict -> origin/kc/immut_dict
+     * [nouvelle branche] kc/inline_print -> origin/kc/inline_print
+     * [nouvelle branche] kc/loading_debug_error -> origin/kc/loading_debug_error
+     * [nouvelle branche] kc/ohnohedidn -> origin/kc/ohnohedidn
+     * [nouvelle branche] kc/online_with_the_rest -> origin/kc/online_with_the_rest
+     * [nouvelle branche] kc/parse_simple -> origin/kc/parse_simple
+     * [nouvelle branche] kc/perf_ident -> origin/kc/perf_ident
+     * [nouvelle branche] kc/precomp_pkg3 -> origin/kc/precomp_pkg3
+     * [nouvelle branche] kc/precompile_overhead -> origin/kc/precompile_overhead
+     * [nouvelle branche] kc/relax_strided_sparse_matmul -> origin/kc/relax_strided_sparse_matmul
+     * [nouvelle branche] kc/robustness -> origin/kc/robustness
+     * [nouvelle branche] kc/search_str_perf -> origin/kc/search_str_perf
+     * [nouvelle branche] kc/seed_fast -> origin/kc/seed_fast
+     * [nouvelle branche] kc/simpler_copyto -> origin/kc/simpler_copyto
+     * [nouvelle branche] kc/so_long_and_thanks_for_the_packages -> origin/kc/so_long_and_thanks_for_the_packages
+     * [nouvelle branche] kc/split_testhelpers -> origin/kc/split_testhelpers
+     * [nouvelle branche] kc/stdlib_loadpath_buildtest -> origin/kc/stdlib_loadpath_buildtest
+     * [nouvelle branche] kc/test    -> origin/kc/test
+     * [nouvelle branche] kf/_apply_apply_type -> origin/kf/_apply_apply_type
+     * [nouvelle branche] kf/assertegal -> origin/kf/assertegal
+     + b4f9f48...796812b kf/bigsroa -> origin/kf/bigsroa  (mise à jour forcée)
+     * [nouvelle branche] kf/cfgsimp -> origin/kf/cfgsimp
+     * [nouvelle branche] kf/cfgwip  -> origin/kf/cfgwip
+     * [nouvelle branche] kf/clangsa -> origin/kf/clangsa
+     * [nouvelle branche] kf/cmdlineargstimeout -> origin/kf/cmdlineargstimeout
+     * [nouvelle branche] kf/codegen -> origin/kf/codegen
+     * [nouvelle branche] kf/codetypedconst -> origin/kf/codetypedconst
+     * [nouvelle branche] kf/effectfree2 -> origin/kf/effectfree2
+     * [nouvelle branche] kf/eps     -> origin/kf/eps
+     * [nouvelle branche] kf/inferencecomplexity -> origin/kf/inferencecomplexity
+     * [nouvelle branche] kf/jb/rm_deps_3 -> origin/kf/jb/rm_deps_3
+     * [nouvelle branche] kf/jn/26512 -> origin/kf/jn/26512
+     * [nouvelle branche] kf/llvmpasstests -> origin/kf/llvmpasstests
+     * [nouvelle branche] kf/newoptselectvalue -> origin/kf/newoptselectvalue
+     * [nouvelle branche] kf/pzip    -> origin/kf/pzip
+     * [nouvelle branche] kf/refactortodo -> origin/kf/refactortodo
+     * [nouvelle branche] kf/reinterpretredux -> origin/kf/reinterpretredux
+     * [nouvelle branche] kf/tpu     -> origin/kf/tpu
+     * [nouvelle branche] kf/tpu2    -> origin/kf/tpu2
+     * [nouvelle branche] kf/tpu3    -> origin/kf/tpu3
+     * [nouvelle branche] kf/uncolon -> origin/kf/uncolon
+     * [nouvelle branche] kf/unionpenalties -> origin/kf/unionpenalties
+     * [nouvelle branche] kf/unionsplit2 -> origin/kf/unionsplit2
+     * [nouvelle branche] kf/wasm    -> origin/kf/wasm
+     * [nouvelle branche] kf/wip     -> origin/kf/wip
+     * [nouvelle branche] kp/old_partr -> origin/kp/old_partr
+     + d31578f...70b4852 kp/partr   -> origin/kp/partr  (mise à jour forcée)
+     * [nouvelle branche] kp/schedtask -> origin/kp/schedtask
+     * [nouvelle branche] ksh/basicstring -> origin/ksh/basicstring
+     * [nouvelle branche] ksh/docmacros -> origin/ksh/docmacros
+     * [nouvelle branche] ksh/lineup -> origin/ksh/lineup
+     * [nouvelle branche] ksh/nt     -> origin/ksh/nt
+     * [nouvelle branche] ksh/nwaiter -> origin/ksh/nwaiter
+     c0e6b5b..f49cb42  master     -> origin/master
+     * [nouvelle branche] mb/cartesiansubarray -> origin/mb/cartesiansubarray
+     * [nouvelle branche] mb/doctake! -> origin/mb/doctake!
+     * [nouvelle branche] mb/remotehashall -> origin/mb/remotehashall
+     * [nouvelle branche] mb/reverseunsignedrange -> origin/mb/reverseunsignedrange
+     * [nouvelle branche] mb/sparsefinders -> origin/mb/sparsefinders
+     * [nouvelle branche] mb/stridedtransposes -> origin/mb/stridedtransposes
+     + 2359f32...7a1a7d4 mb/thisshouldhaveoccurredtome -> origin/mb/thisshouldhaveoccurredtome  (mise à jour forcée)
+     * [nouvelle branche] mb/unaliascopy-reinterprets -> origin/mb/unaliascopy-reinterprets
+     * [nouvelle branche] mb/value-based-BroadcastStyle -> origin/mb/value-based-BroadcastStyle
+     * [nouvelle branche] mb/whisperdownthelane -> origin/mb/whisperdownthelane
+     * [nouvelle branche] mh/divrem_u128_i686 -> origin/mh/divrem_u128_i686
+     * [nouvelle branche] mh/specialize_similar_for -> origin/mh/specialize_similar_for
+     * [nouvelle branche] mh/tmerge_to_union_more_often -> origin/mh/tmerge_to_union_more_often
+     * [nouvelle branche] mji/zygote -> origin/mji/zygote
+     * [nouvelle branche] nl/fpsort  -> origin/nl/fpsort
+     * [nouvelle branche] nl/length  -> origin/nl/length
+     * [nouvelle branche] nl/mapreducedim -> origin/nl/mapreducedim
+     * [nouvelle branche] nl/mbedtls -> origin/nl/mbedtls
+     * [nouvelle branche] nl/sleep   -> origin/nl/sleep
+     93168a6..7711781  release-0.6 -> origin/release-0.6
+     * [nouvelle branche] release-0.7 -> origin/release-0.7
+     * [nouvelle branche] release-1.0 -> origin/release-1.0
+     * [nouvelle branche] release-1.1 -> origin/release-1.1
+     * [nouvelle branche] revert-26854-kc/bump_pkg3_6 -> origin/revert-26854-kc/bump_pkg3_6
+     * [nouvelle branche] revert-28319-kc/precompiler_build2 -> origin/revert-28319-kc/precompiler_build2
+     * [nouvelle branche] revert-29494-kf/uncolon_recursion -> origin/revert-29494-kf/uncolon_recursion
+     + 52eaf0c...da129b8 rf/MT-show -> origin/rf/MT-show  (mise à jour forcée)
+     * [nouvelle branche] rf/autoindentpaste -> origin/rf/autoindentpaste
+     * [nouvelle branche] rf/digits-unsigned -> origin/rf/digits-unsigned
+     * [nouvelle branche] rf/digits-unsigned-nonrecur -> origin/rf/digits-unsigned-nonrecur
+     * [nouvelle branche] rf/doc-push -> origin/rf/doc-push
+     * [nouvelle branche] rf/rand/RANDOM_DEVICE -> origin/rf/rand/RANDOM_DEVICE
+     * [nouvelle branche] rf/rand/fast -> origin/rf/rand/fast
+     * [nouvelle branche] rf/rand/frompair -> origin/rf/rand/frompair
+     * [nouvelle branche] rf/rand/genpair -> origin/rf/rand/genpair
+     * [nouvelle branche] rf/rand/ndl -> origin/rf/rand/ndl
+     * [nouvelle branche] rf/repl/iocontext -> origin/rf/repl/iocontext
+     * [nouvelle branche] rf/union-immutable-set -> origin/rf/union-immutable-set
+     * [nouvelle branche] sb/dllist  -> origin/sb/dllist
+     * [nouvelle branche] sb/irrational-bigfloat -> origin/sb/irrational-bigfloat
+     * [nouvelle branche] sb/reduce-empty -> origin/sb/reduce-empty
+     * [nouvelle branche] sb/suitesparse-news -> origin/sb/suitesparse-news
+     * [nouvelle branche] sf/httpbin -> origin/sf/httpbin
+     * [nouvelle branche] sf/memprofiler -> origin/sf/memprofiler
+     * [nouvelle branche] sf/remove_build_sysimg -> origin/sf/remove_build_sysimg
+     * [nouvelle branche] sf/sticky_shells_and_ringing_bells -> origin/sf/sticky_shells_and_ringing_bells
+     * [nouvelle branche] sf/which_doesnt_throw -> origin/sf/which_doesnt_throw
+     * [nouvelle branche] sk/median-fix -> origin/sk/median-fix
+     * [nouvelle branche] sk/my-precious -> origin/sk/my-precious
+     * [nouvelle branche] sk/precompile-blacklist -> origin/sk/precompile-blacklist
+     * [nouvelle branche] sk/trig    -> origin/sk/trig
+     * [nouvelle branche] sk/winpaths -> origin/sk/winpaths
+     * [nouvelle branche] sk/x-init  -> origin/sk/x-init
+     * [nouvelle branche] staging    -> origin/staging
+     f143ae0..1f25289  stevengj-patch-2 -> origin/stevengj-patch-2
+     + 76b734a...bca2b53 tb/codegen-norecursion -> origin/tb/codegen-norecursion  (mise à jour forcée)
+     * [nouvelle branche] tb/fnattrs -> origin/tb/fnattrs
+     * [nouvelle branche] tb/hotfix  -> origin/tb/hotfix
+     * [nouvelle branche] tb/log_nothing -> origin/tb/log_nothing
+     * [nouvelle branche] teh/inlining_unreachable -> origin/teh/inlining_unreachable
+     * [nouvelle branche] vc/7prep   -> origin/vc/7prep
+     * [nouvelle branche] vc/asan_tasks -> origin/vc/asan_tasks
+     * [nouvelle branche] vc/distloading -> origin/vc/distloading
+     * [nouvelle branche] vc/irshow  -> origin/vc/irshow
+     * [nouvelle branche] vc/llvm_undef -> origin/vc/llvm_undef
+     * [nouvelle branche] vc/no_copy_stacks -> origin/vc/no_copy_stacks
+     * [nouvelle branche] vc/ppc_unix_signals -> origin/vc/ppc_unix_signals
+     * [nouvelle branche] vc/restored-1.0.1 -> origin/vc/restored-1.0.1
+     * [nouvelle branche] vc/revert28449 -> origin/vc/revert28449
+     * [nouvelle branche] vc/tsan    -> origin/vc/tsan
+     * [nouvelle branche] vc/tsan_nort -> origin/vc/tsan_nort
+     * [nouvelle branche] vc/vsts    -> origin/vc/vsts
+     * [nouvelle branche] vs/arm-delete-readme -> origin/vs/arm-delete-readme
+     * [nouvelle branche] vs/macports -> origin/vs/macports
+     * [nouvelle étiquette] v0.6.3     -> v0.6.3
+     * [nouvelle étiquette] v0.6.4     -> v0.6.4
+     * [nouvelle étiquette] v0.7.0     -> v0.7.0
+     * [nouvelle étiquette] v0.7.0-alpha -> v0.7.0-alpha
+     * [nouvelle étiquette] v0.7.0-beta -> v0.7.0-beta
+     * [nouvelle étiquette] v0.7.0-beta2 -> v0.7.0-beta2
+     * [nouvelle étiquette] v0.7.0-rc1 -> v0.7.0-rc1
+     * [nouvelle étiquette] v0.7.0-rc2 -> v0.7.0-rc2
+     * [nouvelle étiquette] v0.7.0-rc3 -> v0.7.0-rc3
+     * [nouvelle étiquette] v1.0.0     -> v1.0.0
+     * [nouvelle étiquette] v1.0.0-rc1 -> v1.0.0-rc1
+     * [nouvelle étiquette] v1.0.1     -> v1.0.1
+     * [nouvelle étiquette] v1.0.2     -> v1.0.2    
+     #+END_EXAMPLE
+
+     Switching to last stable:
+     #+begin_src sh :session foo :results output :exports both
+       git checkout v1.0.2
+       make -j7
+     #+end_src
+
+     #+RESULTS:
+     
+     Update julia already installed packages:
+     #+begin_src sh :session foo :results output :exports both
+       mkdir /scratch/squinito/.julia/v1.0
+       cp /scratch/squinito/.julia/v0.6/REQUIRE /scratch/squinito/.julia/v1.0/
+       echo "export JULIA_DEPOT_PATH=/scratch/squinito/.julia/" >> ~/.bashrc
+     #+end_src
+
+     #+BEGIN_SRC julia
+       using Pkg
+       Pkg.add("Missings")
+       Pkg.add("DataFrames")
+       Pkg.add("CSV")
+       Pkg.add("YAML")
+     #+END_SRC
+
+*** 2018-12-13
+**** Handling big csv
+***** C memory usage
+    #+BEGIN_EXAMPLE
+    --------------------------------------------------------------------------------
+Command:            ./main /scratch/squinito/Dev/Data/dataset.csv
+Massif arguments:   (none)
+ms_print arguments: massif.out.15584
+--------------------------------------------------------------------------------
+
+
+    GB
+3.438^                                                                       #
+     |                                                                    :::#
+     |                                                                ::@::::#
+     |                                                             :::::@::::#
+     |                                                         :::@:::::@::::#
+     |                                                      @:::::@:::::@::::#
+     |                                                  ::::@:::::@:::::@::::#
+     |                                               ::@::::@:::::@:::::@::::#
+     |                                            :@:::@::::@:::::@:::::@::::#
+     |                                        :::::@:::@::::@:::::@:::::@::::#
+     |                                    :::::: ::@:::@::::@:::::@:::::@::::#
+     |                                 @:::::::: ::@:::@::::@:::::@:::::@::::#
+     |                            :@:::@: :::::: ::@:::@::::@:::::@:::::@::::#
+     |                         ::::@:::@: :::::: ::@:::@::::@:::::@:::::@::::#
+     |                      :::::::@:::@: :::::: ::@:::@::::@:::::@:::::@::::#
+     |                  :::::::::::@:::@: :::::: ::@:::@::::@:::::@:::::@::::#
+     |              :::::::::::::::@:::@: :::::: ::@:::@::::@:::::@:::::@::::#
+     |           ::::::::::::::::::@:::@: :::::: ::@:::@::::@:::::@:::::@::::#
+     |       ::::::::::::::::::::::@:::@: :::::: ::@:::@::::@:::::@:::::@::::#
+     |   @:::::::::::::::::::::::::@:::@: :::::: ::@:::@::::@:::::@:::::@::::#
+   0 +----------------------------------------------------------------------->Gi
+     0                                                                   413.0
+
+Number of snapshots: 90
+ Detailed snapshots: [1, 4, 29, 33, 45, 49, 59, 69, 79, 89 (peak)]
+
+--------------------------------------------------------------------------------
+  n        time(i)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
+--------------------------------------------------------------------------------
+  0              0                0                0             0            0
+  1  7,856,423,114       65,662,800       65,640,168        22,632            0
+99.97% (65,640,168B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+->54.46% (35,760,000B) 0x400CEA: allocate (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| ->54.46% (35,760,000B) 0x400E4A: grow (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| | ->54.46% (35,760,000B) 0x40169E: load_csv (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |   ->54.46% (35,760,000B) 0x40138B: main (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |     
+| ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+| 
+->27.23% (17,880,000B) 0x400D76: allocate (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| ->27.23% (17,880,000B) 0x400E4A: grow (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| | ->27.23% (17,880,000B) 0x40169E: load_csv (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |   ->27.23% (17,880,000B) 0x40138B: main (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |     
+| ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+| 
+->18.28% (12,000,000B) 0x400DFF: allocate (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| ->18.28% (12,000,000B) 0x400E4A: grow (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| | ->18.28% (12,000,000B) 0x40169E: load_csv (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |   ->18.28% (12,000,000B) 0x40138B: main (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |     
+| ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+| 
+->00.00% (168B) in 1+ places, all below ms_print's threshold (01.00%)
+
+--------------------------------------------------------------------------------
+  n        time(i)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
+--------------------------------------------------------------------------------
+  2 13,406,193,902      111,849,296      111,840,168         9,128            0
+  3 18,057,290,149      150,568,784      150,560,168         8,616            0
+  4 23,343,380,629      194,572,112      194,560,168        11,944            0
+99.99% (194,560,168B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+->54.52% (106,080,000B) 0x400CEA: allocate (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| ->54.52% (106,080,000B) 0x400E4A: grow (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| | ->54.52% (106,080,000B) 0x40169E: load_csv (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |   ->54.52% (106,080,000B) 0x40138B: main (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |     
+| ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+| 
+->27.26% (53,040,000B) 0x400D76: allocate (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| ->27.26% (53,040,000B) 0x400E4A: grow (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| | ->27.26% (53,040,000B) 0x40169E: load_csv (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |   ->27.26% (53,040,000B) 0x40138B: main (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |     
+| ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+| 
+->18.21% (35,440,000B) 0x400DFF: allocate (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| ->18.21% (35,440,000B) 0x400E4A: grow (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| | ->18.21% (35,440,000B) 0x40169E: load_csv (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |   ->18.21% (35,440,000B) 0x40138B: main (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |     
+| ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+| 
+->00.00% (168B) in 1+ places, all below ms_print's threshold (01.00%)
+
+--------------------------------------------------------------------------------
+  n        time(i)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
+--------------------------------------------------------------------------------
+  5 30,216,959,573      251,764,560      251,760,168         4,392            0
+  6 37,847,036,050      315,137,872      315,120,168        17,704            0
+  7 44,540,473,926      370,573,136      370,560,168        12,968            0
+  8 51,235,366,898      426,446,672      426,440,168         6,504            0
+  9 57,418,841,500      477,929,296      477,920,168         9,128            0
+ 10 64,765,770,121      539,086,672      539,080,168         6,504            0
+ 11 68,678,150,627      571,658,064      571,640,168        17,896            0
+ 12 76,133,234,090      633,700,176      633,680,168        20,008            0
+ 13 82,070,335,125      682,979,152      682,960,168        18,984            0
+ 14 88,870,425,415      739,299,152      739,280,168        18,984            0
+ 15 92,446,627,709      769,216,336      769,200,168        16,168            0
+ 16 98,630,323,135      820,686,672      820,680,168         6,504            0
+ 17 107,404,136,910      893,722,448      893,720,168         2,280            0
+ 18 112,637,969,964      937,291,600      937,280,168        11,432            0
+ 19 119,141,160,752      991,403,856      991,400,168         3,688            0
+ 20 126,771,938,637    1,054,777,168    1,054,760,168        17,000            0
+ 21 131,872,642,610    1,097,011,024    1,097,000,168        10,856            0
+ 22 140,740,412,998    1,170,935,632    1,170,920,168        15,464            0
+ 23 144,545,914,286    1,202,610,000    1,202,600,168         9,832            0
+ 24 152,152,710,578    1,265,971,024    1,265,960,168        10,856            0
+ 25 158,490,730,216    1,318,776,656    1,318,760,168        16,488            0
+ 26 166,097,343,274    1,382,129,488    1,382,120,168         9,320            0
+ 27 171,186,307,251    1,424,375,632    1,424,360,168        15,464            0
+ 28 177,555,566,691    1,477,177,168    1,477,160,168        17,000            0
+ 29 181,444,732,014    1,509,728,080    1,509,720,168         7,912            0
+100.00% (1,509,720,168B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+->54.54% (823,440,000B) 0x400CEA: allocate (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| ->54.54% (823,440,000B) 0x400E4A: grow (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| | ->54.54% (823,440,000B) 0x40169E: load_csv (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |   ->54.54% (823,440,000B) 0x40138B: main (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |     
+| ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+| 
+->27.27% (411,720,000B) 0x400D76: allocate (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| ->27.27% (411,720,000B) 0x400E4A: grow (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| | ->27.27% (411,720,000B) 0x40169E: load_csv (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |   ->27.27% (411,720,000B) 0x40138B: main (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |     
+| ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+| 
+->18.19% (274,560,000B) 0x400DFF: allocate (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| ->18.19% (274,560,000B) 0x400E4A: grow (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| | ->18.19% (274,560,000B) 0x40169E: load_csv (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |   ->18.19% (274,560,000B) 0x40138B: main (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |     
+| ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+| 
+->00.00% (168B) in 1+ places, all below ms_print's threshold (01.00%)
+
+--------------------------------------------------------------------------------
+  n        time(i)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
+--------------------------------------------------------------------------------
+ 30 188,731,689,657    1,570,459,472    1,570,440,168        19,304            0
+ 31 193,589,594,992    1,610,923,856    1,610,920,168         3,688            0
+ 32 198,448,041,848    1,651,412,816    1,651,400,168        12,648            0
+ 33 205,737,791,385    1,712,144,208    1,712,120,168        24,040            0
+100.00% (1,712,120,168B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+->54.54% (933,840,000B) 0x400CEA: allocate (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| ->54.54% (933,840,000B) 0x400E4A: grow (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| | ->54.54% (933,840,000B) 0x40169E: load_csv (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |   ->54.54% (933,840,000B) 0x40138B: main (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |     
+| ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+| 
+->27.27% (466,920,000B) 0x400D76: allocate (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| ->27.27% (466,920,000B) 0x400E4A: grow (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| | ->27.27% (466,920,000B) 0x40169E: load_csv (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |   ->27.27% (466,920,000B) 0x40138B: main (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |     
+| ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+| 
+->18.19% (311,360,000B) 0x400DFF: allocate (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| ->18.19% (311,360,000B) 0x400E4A: grow (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| | ->18.19% (311,360,000B) 0x40169E: load_csv (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |   ->18.19% (311,360,000B) 0x40138B: main (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |     
+| ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+| 
+->00.00% (168B) in 1+ places, all below ms_print's threshold (01.00%)
+
+--------------------------------------------------------------------------------
+  n        time(i)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
+--------------------------------------------------------------------------------
+ 34 215,368,233,363    1,792,212,816    1,792,200,168        12,648            0
+ 35 222,527,402,846    1,851,613,008    1,851,600,168        12,840            0
+ 36 227,370,533,088    1,892,097,872    1,892,080,168        17,704            0
+ 37 232,228,932,101    1,932,574,544    1,932,560,168        14,376            0
+ 38 237,086,730,481    1,973,063,504    1,973,040,168        23,336            0
+ 39 241,944,858,462    2,013,540,176    2,013,520,168        20,008            0
+ 40 246,804,452,624    2,054,004,560    2,054,000,168         4,392            0
+ 41 251,664,145,724    2,094,493,520    2,094,480,168        13,352            0
+ 42 256,524,957,265    2,134,970,192    2,134,960,168        10,024            0
+ 43 266,081,135,690    2,214,174,544    2,214,160,168        14,376            0
+ 44 273,349,942,492    2,274,897,744    2,274,880,168        17,576            0
+ 45 278,207,802,713    2,315,370,320    2,315,360,168        10,152            0
+100.00% (2,315,360,168B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+->54.54% (1,262,880,000B) 0x400CEA: allocate (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| ->54.54% (1,262,880,000B) 0x400E4A: grow (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| | ->54.54% (1,262,880,000B) 0x40169E: load_csv (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |   ->54.54% (1,262,880,000B) 0x40138B: main (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |     
+| ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+| 
+->27.27% (631,440,000B) 0x400D76: allocate (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| ->27.27% (631,440,000B) 0x400E4A: grow (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| | ->27.27% (631,440,000B) 0x40169E: load_csv (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |   ->27.27% (631,440,000B) 0x40138B: main (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |     
+| ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+| 
+->18.18% (421,040,000B) 0x400DFF: allocate (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| ->18.18% (421,040,000B) 0x400E4A: grow (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| | ->18.18% (421,040,000B) 0x40169E: load_csv (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |   ->18.18% (421,040,000B) 0x40138B: main (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |     
+| ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+| 
+->00.00% (168B) in 1+ places, all below ms_print's threshold (01.00%)
+
+--------------------------------------------------------------------------------
+  n        time(i)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
+--------------------------------------------------------------------------------
+ 46 285,494,791,581    2,376,093,520    2,376,080,168        13,352            0
+ 47 290,354,390,468    2,416,570,192    2,416,560,168        10,024            0
+ 48 297,642,308,575    2,477,289,296    2,477,280,168         9,128            0
+ 49 302,453,390,049    2,517,339,984    2,517,320,168        19,816            0
+100.00% (2,517,320,168B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+->54.54% (1,373,040,000B) 0x400CEA: allocate (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| ->54.54% (1,373,040,000B) 0x400E4A: grow (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| | ->54.54% (1,373,040,000B) 0x40169E: load_csv (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |   ->54.54% (1,373,040,000B) 0x40138B: main (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |     
+| ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+| 
+->27.27% (686,520,000B) 0x400D76: allocate (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| ->27.27% (686,520,000B) 0x400E4A: grow (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| | ->27.27% (686,520,000B) 0x40169E: load_csv (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |   ->27.27% (686,520,000B) 0x40138B: main (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |     
+| ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+| 
+->18.18% (457,760,000B) 0x400DFF: allocate (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| ->18.18% (457,760,000B) 0x400E4A: grow (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| | ->18.18% (457,760,000B) 0x40169E: load_csv (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |   ->18.18% (457,760,000B) 0x40138B: main (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |     
+| ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+| 
+->00.00% (168B) in 1+ places, all below ms_print's threshold (01.00%)
+
+--------------------------------------------------------------------------------
+  n        time(i)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
+--------------------------------------------------------------------------------
+ 50 306,059,812,711    2,547,257,168    2,547,240,168        17,000            0
+ 51 309,666,744,418    2,577,178,448    2,577,160,168        18,280            0
+ 52 313,243,451,590    2,607,095,632    2,607,080,168        15,464            0
+ 53 316,827,051,831    2,637,012,816    2,637,000,168        12,648            0
+ 54 320,414,746,479    2,666,930,000    2,666,920,168         9,832            0
+ 55 324,001,916,424    2,696,859,472    2,696,840,168        19,304            0
+ 56 327,589,269,699    2,726,776,656    2,726,760,168        16,488            0
+ 57 331,176,981,149    2,756,693,840    2,756,680,168        13,672            0
+ 58 334,765,266,716    2,786,611,024    2,786,600,168        10,856            0
+ 59 338,354,132,777    2,816,532,304    2,816,520,168        12,136            0
+100.00% (2,816,520,168B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+->54.54% (1,536,240,000B) 0x400CEA: allocate (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| ->54.54% (1,536,240,000B) 0x400E4A: grow (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| | ->54.54% (1,536,240,000B) 0x40169E: load_csv (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |   ->54.54% (1,536,240,000B) 0x40138B: main (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |     
+| ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+| 
+->27.27% (768,120,000B) 0x400D76: allocate (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| ->27.27% (768,120,000B) 0x400E4A: grow (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| | ->27.27% (768,120,000B) 0x40169E: load_csv (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |   ->27.27% (768,120,000B) 0x40138B: main (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |     
+| ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+| 
+->18.18% (512,160,000B) 0x400DFF: allocate (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| ->18.18% (512,160,000B) 0x400E4A: grow (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| | ->18.18% (512,160,000B) 0x40169E: load_csv (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |   ->18.18% (512,160,000B) 0x40138B: main (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |     
+| ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+| 
+->00.00% (168B) in 1+ places, all below ms_print's threshold (01.00%)
+
+--------------------------------------------------------------------------------
+  n        time(i)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
+--------------------------------------------------------------------------------
+ 60 341,942,896,832    2,846,449,488    2,846,440,168         9,320            0
+ 61 345,533,836,753    2,876,366,672    2,876,360,168         6,504            0
+ 62 349,140,998,778    2,906,283,856    2,906,280,168         3,688            0
+ 63 352,747,562,198    2,936,225,616    2,936,200,168        25,448            0
+ 64 356,336,898,845    2,966,142,800    2,966,120,168        22,632            0
+ 65 359,914,477,244    2,996,059,984    2,996,040,168        19,816            0
+ 66 363,501,349,732    3,025,977,168    3,025,960,168        17,000            0
+ 67 367,088,914,685    3,055,898,448    3,055,880,168        18,280            0
+ 68 370,676,317,603    3,085,815,632    3,085,800,168        15,464            0
+ 69 374,263,379,367    3,115,732,816    3,115,720,168        12,648            0
+100.00% (3,115,720,168B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+->54.54% (1,699,440,000B) 0x400CEA: allocate (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| ->54.54% (1,699,440,000B) 0x400E4A: grow (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| | ->54.54% (1,699,440,000B) 0x40169E: load_csv (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |   ->54.54% (1,699,440,000B) 0x40138B: main (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |     
+| ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+| 
+->27.27% (849,720,000B) 0x400D76: allocate (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| ->27.27% (849,720,000B) 0x400E4A: grow (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| | ->27.27% (849,720,000B) 0x40169E: load_csv (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |   ->27.27% (849,720,000B) 0x40138B: main (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |     
+| ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+| 
+->18.18% (566,560,000B) 0x400DFF: allocate (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| ->18.18% (566,560,000B) 0x400E4A: grow (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| | ->18.18% (566,560,000B) 0x40169E: load_csv (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |   ->18.18% (566,560,000B) 0x40138B: main (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |     
+| ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+| 
+->00.00% (168B) in 1+ places, all below ms_print's threshold (01.00%)
+
+--------------------------------------------------------------------------------
+  n        time(i)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
+--------------------------------------------------------------------------------
+ 70 377,852,022,471    3,145,650,000    3,145,640,168         9,832            0
+ 71 381,440,552,410    3,175,579,472    3,175,560,168        19,304            0
+ 72 385,029,256,398    3,205,496,656    3,205,480,168        16,488            0
+ 73 388,618,347,113    3,235,413,840    3,235,400,168        13,672            0
+ 74 392,221,240,618    3,265,331,024    3,265,320,168        10,856            0
+ 75 395,828,341,243    3,295,252,304    3,295,240,168        12,136            0
+ 76 399,431,461,597    3,325,169,488    3,325,160,168         9,320            0
+ 77 403,060,071,814    3,355,533,136    3,355,520,168        12,968            0
+ 78 406,652,853,538    3,385,450,320    3,385,440,168        10,152            0
+ 79 410,244,867,442    3,415,371,600    3,415,360,168        11,432            0
+100.00% (3,415,360,168B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+->54.54% (1,862,880,000B) 0x400CEA: allocate (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| ->54.54% (1,862,880,000B) 0x400E4A: grow (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| | ->54.54% (1,862,880,000B) 0x40169E: load_csv (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |   ->54.54% (1,862,880,000B) 0x40138B: main (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |     
+| ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+| 
+->27.27% (931,440,000B) 0x400D76: allocate (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| ->27.27% (931,440,000B) 0x400E4A: grow (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| | ->27.27% (931,440,000B) 0x40169E: load_csv (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |   ->27.27% (931,440,000B) 0x40138B: main (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |     
+| ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+| 
+->18.18% (621,040,000B) 0x400DFF: allocate (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| ->18.18% (621,040,000B) 0x400E4A: grow (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| | ->18.18% (621,040,000B) 0x40169E: load_csv (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |   ->18.18% (621,040,000B) 0x40138B: main (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |     
+| ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+| 
+->00.00% (168B) in 1+ places, all below ms_print's threshold (01.00%)
+
+--------------------------------------------------------------------------------
+  n        time(i)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
+--------------------------------------------------------------------------------
+ 80 413,837,662,859    3,445,288,784    3,445,280,168         8,616            0
+ 81 417,430,098,157    3,475,205,968    3,475,200,168         5,800            0
+ 82 421,022,847,911    3,505,123,152    3,505,120,168         2,984            0
+ 83 424,617,009,703    3,535,064,912    3,535,040,168        24,744            0
+ 84 428,210,572,839    3,564,982,096    3,564,960,168        21,928            0
+ 85 431,804,496,312    3,594,899,280    3,594,880,168        19,112            0
+ 86 435,407,180,838    3,624,816,464    3,624,800,168        16,296            0
+ 87 439,018,436,776    3,654,737,744    3,654,720,168        17,576            0
+ 88 442,630,340,656    3,684,654,928    3,684,640,168        14,760            0
+ 89 443,406,532,734    3,691,167,568    3,691,160,168         7,400            0
+100.00% (3,691,160,168B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+->54.55% (2,013,360,000B) 0x400CEA: allocate (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| ->54.55% (2,013,360,000B) 0x400E4A: grow (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| | ->54.55% (2,013,360,000B) 0x40169E: load_csv (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |   ->54.55% (2,013,360,000B) 0x40138B: main (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |     
+| ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+| 
+->27.27% (1,006,680,000B) 0x400D76: allocate (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| ->27.27% (1,006,680,000B) 0x400E4A: grow (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| | ->27.27% (1,006,680,000B) 0x40169E: load_csv (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |   ->27.27% (1,006,680,000B) 0x40138B: main (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |     
+| ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+| 
+->18.18% (671,120,000B) 0x400DFF: allocate (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| ->18.18% (671,120,000B) 0x400E4A: grow (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| | ->18.18% (671,120,000B) 0x40169E: load_csv (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |   ->18.18% (671,120,000B) 0x40138B: main (in /home/squinito/Dev/MISTIS/FMC/src/tools/neighbourhood/main)
+| |     
+| ->00.00% (0B) in 1+ places, all below ms_print's threshold (01.00%)
+| 
+->00.00% (168B) in 1+ places, all below ms_print's threshold (01.00%)
+
+
+    #+END_EXAMPLE
+***** Python memory usage
+****** Specifying type
+      #+begin_src sh :results output :exports both
+        mprof run ~/Dev/MISTIS/FMC/src/tools/neighbourhood/test_load.py --file /scratch/squinito/Dev/Data/dataset.csv
+      #+end_src
+
+      #+RESULTS:
+      #+begin_example
+        Patient  Coord_X  Coord_Y  Coord_Z        ADC       CBV       AUC
+      0      P1        0        0        0   7.866038  1.709130  1.433059
+      1      P1        1        0        0   6.765295  1.429368  1.840923
+      2      P1        2        0        0   7.107266  0.423097 -0.570360
+      3      P1        3        0        0   7.401812 -0.138951  0.446203
+      4      P1        4        0        0   9.151793  0.574290  2.350803
+      5      P1        5        0        0   8.913643 -0.509734  2.030398
+      6      P1        6        0        0   7.312208  0.596472  3.171836
+      7      P1        7        0        0   7.629743  2.362686  2.445601
+      8      P1        8        0        0   8.990711  3.471004  0.777070
+      9      P1        9        0        0  10.535673 -1.175639  0.094035
+      mprof: Sampling memory every 0.1s
+      running as a Python program...
+      #+end_example
+
+      Loading csv with pandas consume x3 time more memory.
+      #+begin_src sh :results output :exports both
+        mprof plot
+      #+end_src
+
+      #+RESULTS:
+      : Using last profile data.
+      
+      #+RESULTS:
+      [[file:/home/squinito/Dev/MISTIS/Brain-MRI/org/img/memory_profiling/python/csv_read/load_csv.png]]    
+
+****** Specifying subtype
+      #+begin_src sh :results output :exports both
+        mprof run ~/Dev/MISTIS/FMC/src/tools/neighbourhood/test_load.py --file /scratch/squinito/Dev/Data/dataset.csv
+      #+end_src
+
+      #+RESULTS:
+      #+begin_example
+        Patient  Coord_X  Coord_Y  Coord_Z        ADC       CBV       AUC
+      0      P1        0        0        0   7.866038  1.709130  1.433059
+      1      P1        1        0        0   6.765295  1.429368  1.840923
+      2      P1        2        0        0   7.107266  0.423097 -0.570360
+      3      P1        3        0        0   7.401812 -0.138951  0.446203
+      4      P1        4        0        0   9.151793  0.574290  2.350803
+      5      P1        5        0        0   8.913643 -0.509734  2.030398
+      6      P1        6        0        0   7.312208  0.596472  3.171836
+      7      P1        7        0        0   7.629743  2.362686  2.445601
+      8      P1        8        0        0   8.990711  3.471004  0.777070
+      9      P1        9        0        0  10.535673 -1.175639  0.094035
+      mprof: Sampling memory every 0.1s
+      running as a Python program...
+      #+end_example
+
+      Loading csv with pandas consume x3 time more memory.
+      #+begin_src sh :results output :exports both
+        mprof plot
+      #+end_src
+
+      #+RESULTS:
+      : Using last profile data.
+      
+      #+RESULTS:
+      [[file:/home/squinito/Dev/MISTIS/Brain-MRI/org/img/memory_profiling/python/csv_read/load_csv_subtype.png]]
+* 2019
+** January
+*** 2019-01-02
+**** TODO Numeric and environment MISTIS presentation
+     DEADLINE: <2019-01-28 lun.>
+
+**** TODO Add written description of the FMC code architecture
 * Emacs Setup 							   :noexport:
   This document has local variables in its postembule, which should
   allow Org-mode to work seamlessly without any setup. If you're
